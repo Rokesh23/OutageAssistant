@@ -5,4 +5,4 @@ openpyxl
 python-pptx
 numpy
 requests
-ollama
+groq
