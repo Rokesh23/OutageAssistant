@@ -1,7 +1,6 @@
 import os
 import streamlit as st
 
-# Read Groq API key from Streamlit Secrets or Environment Variables
 GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", os.environ.get("GROQ_API_KEY"))
 
 try:
@@ -21,9 +20,12 @@ def ask_llm_stream(question, context):
         "'Sorry, I could not find any RCA document related to your query in the indexed records.'"
     )
 
+    # Trim context to max 3500 chars to avoid exceeding context token limits
+    safe_context = context[:3500] if context else ""
+
     user_prompt = f"""
 RCA DOCUMENTS CONTEXT:
-{context}
+{safe_context}
 
 USER QUESTION:
 {question}
@@ -75,7 +77,7 @@ Provide a direct, concise response based strictly on the context above.
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.0,
-                max_tokens=500,
+                max_tokens=400,
                 stream=True,
             )
 
