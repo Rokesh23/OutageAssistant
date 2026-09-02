@@ -30,11 +30,7 @@ def resolve_file_paths():
     return index_file, metadata_file
 
 INDEX_FILE, METADATA_FILE = resolve_file_paths()
-# Dynamic top_k for broad queries
-    if any(phrase in query_raw for phrase in ["all incidents", "list incidents", "all rca", "show all"]):
-        top_k = 15
-    else:
-        top_k = 5
+TOP_K = 5
 
 try:
     import faiss
