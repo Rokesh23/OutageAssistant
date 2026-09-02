@@ -37,26 +37,42 @@ Provide a direct, concise response based strictly on the context above.
         yield context if context else "Sorry, I could not find any RCA document related to your query in the indexed records."
         return
 
-    try:
-        client = Groq(api_key=GROQ_API_KEY)
-        completion = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.0,
-            max_tokens=500,
-            stream=True,
-        )
+    # List of stable models on Groq to try in order
+    candidate_models = [
+        "llama-3.3-70b-versatile",
+        "llama3-8b-8192",
+        "llama3-70b-8192",
+        "mixtral-8x7b-32768"
+    ]
 
-        for chunk in completion:
-            if chunk.choices[0].delta.content:
-                yield chunk.choices[0].delta.content
+    client = Groq(api_key=GROQ_API_KEY)
+    last_error = None
 
-    except Exception as e:
-        yield f"⚠️ **Error connecting to Groq AI:** {str(e)}\n\n"
-        yield f"### 📄 Matched Context:\n{context}"
+    for model_name in candidate_models:
+        try:
+            completion = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.0,
+                max_tokens=500,
+                stream=True,
+            )
+
+            for chunk in completion:
+                if chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+            return  # Successfully completed streaming
+
+        except Exception as e:
+            last_error = e
+            continue  # Try next model if current model fails
+
+    # If all candidate models failed
+    yield f"⚠️ **Error connecting to Groq AI:** {str(last_error)}\n\n"
+    yield f"### 📄 Matched Context:\n{context}"
 
 
 ask_llm = ask_llm_stream
