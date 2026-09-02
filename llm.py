@@ -1,67 +1,48 @@
 import os
 from config import CHAT_MODEL
 
-os.environ["OLLAMA_KEEP_ALIVE"] = "-1"
-
-# Safely handle environments where ollama module or local service is missing (e.g. Streamlit Cloud)
+# Try local Ollama first; fallback to direct context format
 try:
     import ollama
     HAS_OLLAMA = True
 except ImportError:
     HAS_OLLAMA = False
 
-
 def ask_llm_stream(question, context):
     system_prompt = (
         "You are an accurate IT Support RCA Assistant.\n"
         "Your task is to answer questions strictly using ONLY the provided RCA Documents.\n"
-        "Do NOT mention outside systems like Teams, NotebookLM, or ChatGPT unless explicitly written in the context.\n"
-        "Do NOT output template labels or debug text.\n"
+        "Do NOT mention outside systems unless explicitly written in the context.\n"
         "If the context does not contain relevant information, state clearly: "
         "'Sorry, I could not find any RCA document related to your query in the indexed records.'"
     )
 
-    user_prompt = f"""
-RCA DOCUMENTS CONTEXT:
-{context}
+    user_prompt = f"RCA DOCUMENTS CONTEXT:\n{context}\n\nUSER QUESTION:\n{question}\n\nProvide a direct, concise response based strictly on the context above."
 
-USER QUESTION:
-{question}
+    # If running locally with Ollama
+    if HAS_OLLAMA:
+        try:
+            stream = ollama.chat(
+                model=CHAT_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                stream=True,
+                options={"temperature": 0.0, "num_predict": 300}
+            )
+            for chunk in stream:
+                yield chunk["message"]["content"]
+            return
+        except Exception:
+            pass
 
-Provide a direct, concise response based strictly on the context above.
-"""
-
-    # Fallback when running on Streamlit Cloud where Ollama is not installed/running
-    if not HAS_OLLAMA:
-        yield "⚠️ **Note:** Running on Cloud environment (Ollama local service is offline).\n\n"
-        yield "### 📄 Matched RCA Context:\n\n"
-        yield context if context else "Sorry, I could not find any RCA document related to your query in the indexed records."
-        return
-
-    try:
-        stream = ollama.chat(
-            model=CHAT_MODEL,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            stream=True,
-            keep_alive=-1,
-            options={
-                "temperature": 0.0,
-                "num_predict": 300,
-                "num_thread": 8,
-            },
-        )
-
-        for chunk in stream:
-            yield chunk["message"]["content"]
-
-    except Exception:
-        # Graceful fallback if Ollama service is not reachable
-        yield "⚠️ **Unable to connect to local Ollama service.**\n\n"
-        yield "### 📄 Matched RCA Context:\n\n"
-        yield context if context else "Sorry, I could not find any RCA document related to your query in the indexed records."
-
+    # Cloud Fallback (Formats context cleanly if LLM engine is offline)
+    yield "### 📄 Relevant Outage & RCA Records Found:\n\n"
+    if context and "Sorry" not in context:
+        cleaned_context = context.replace("Incident NumberIncident Number", "Incident Number: ")
+        yield cleaned_context
+    else:
+        yield "Sorry, I could not find any RCA document related to your query in the indexed records."
 
 ask_llm = ask_llm_stream
