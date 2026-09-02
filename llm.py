@@ -1,40 +1,62 @@
 import os
+import streamlit as st
+
+# Read Groq API key from Streamlit Secrets or Environment Variables
+GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", os.environ.get("GROQ_API_KEY"))
+
+try:
+    from groq import Groq
+    HAS_GROQ = True if GROQ_API_KEY else False
+except ImportError:
+    HAS_GROQ = False
+
 
 def ask_llm_stream(question, context):
-    """
-    Parses and formats retrieved RCA records cleanly without requiring 
-    an external LLM API key or local Ollama service.
-    """
-    if not context or "could not find" in context.lower():
-        yield "Sorry, I could not find any RCA document related to your query in the indexed records."
+    system_prompt = (
+        "You are an accurate IT Support RCA Assistant.\n"
+        "Your task is to answer questions strictly using ONLY the provided RCA Documents.\n"
+        "Do NOT mention outside systems like Teams, NotebookLM, or ChatGPT unless explicitly written in the context.\n"
+        "Do NOT output template labels or debug text.\n"
+        "If the context does not contain relevant information, state clearly: "
+        "'Sorry, I could not find any RCA document related to your query in the indexed records.'"
+    )
+
+    user_prompt = f"""
+RCA DOCUMENTS CONTEXT:
+{context}
+
+USER QUESTION:
+{question}
+
+Provide a direct, concise response based strictly on the context above.
+"""
+
+    if not HAS_GROQ:
+        yield "⚠️ **Groq API Key missing.** Please configure `GROQ_API_KEY` in Streamlit Cloud Secrets.\n\n"
+        yield "### 📄 Matched RCA Context:\n\n"
+        yield context if context else "Sorry, I could not find any RCA document related to your query in the indexed records."
         return
 
-    yield "### 📄 Matched Incident & RCA Records\n\n"
+    try:
+        client = Groq(api_key=GROQ_API_KEY)
+        completion = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.0,
+            max_tokens=500,
+            stream=True,
+        )
 
-    # Split documents by source tags
-    sections = context.split("Source (")
-    
-    found_match = False
-    for section in sections:
-        if not section.strip():
-            continue
-            
-        found_match = True
-        parts = section.split("):", 1)
-        source_name = parts[0].strip() if len(parts) > 1 else "RCA Document"
-        content = parts[1].strip() if len(parts) > 1 else section.strip()
+        for chunk in completion:
+            if chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
 
-        # Clean common raw extraction artifacts (e.g. repeated table headers)
-        cleaned_content = content
-        for dup in ["Incident Number", "Environment", "Application Name", "RCA Date", "Time", "Event / Action Taken"]:
-            cleaned_content = cleaned_content.replace(f"{dup}{dup}{dup}", f"{dup}: ")
-            cleaned_content = cleaned_content.replace(f"{dup}{dup}", f"{dup}: ")
+    except Exception as e:
+        yield f"⚠️ **Error connecting to Groq AI:** {str(e)}\n\n"
+        yield f"### 📄 Matched Context:\n{context}"
 
-        yield f"📌 **Source:** `{source_name}`\n\n"
-        yield f"{cleaned_content}\n\n"
-        yield "---\n\n"
-
-    if not found_match:
-        yield "Sorry, I could not find any RCA document related to your query in the indexed records."
 
 ask_llm = ask_llm_stream
