@@ -12,13 +12,13 @@ except ImportError:
 
 def ask_llm_stream(question, context):
     system_prompt = (
-        "You are an IT Support RCA Assistant. Answer strictly using ONLY the provided RCA Documents. "
-        "Keep your answer concise and direct. "
+        "You are an IT Support RCA Assistant. Answer strictly using ONLY the provided RCA Documents.\n"
+        "Keep your answer concise and direct.\n"
         "If no information is found, state: 'Sorry, I could not find any RCA document related to your query in the indexed records.'"
     )
 
-    # Strictly limit context length to 1200 characters to prevent Groq 400 token error
-    safe_context = context[:1200] if context else ""
+    # Limit context length to prevent token overflow
+    safe_context = context[:1500] if context else ""
 
     user_prompt = f"RCA CONTEXT:\n{safe_context}\n\nUSER QUESTION:\n{question}"
 
@@ -30,11 +30,10 @@ def ask_llm_stream(question, context):
 
     client = Groq(api_key=GROQ_API_KEY)
     
-    # Try stable, current Groq production models explicitly
+    # Active Groq production models (decommissioned models like mixtral-8x7b-32768 removed)
     models_to_try = [
         "llama-3.3-70b-versatile",
-        "llama-3.1-8b-instant",
-        "mixtral-8x7b-32768"
+        "llama-3.1-8b-instant"
     ]
 
     last_error = None
@@ -47,20 +46,20 @@ def ask_llm_stream(question, context):
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.0,
-                max_tokens=250,
+                max_tokens=300,
                 stream=True,
             )
 
             for chunk in completion:
                 if chunk.choices[0].delta.content:
                     yield chunk.choices[0].delta.content
-            return  # Success!
+            return  # Success
 
         except Exception as e:
             last_error = e
             continue
 
-    # Fallback response if all API model attempts fail
+    # Fallback if Groq API fails
     yield f"⚠️ **Groq API Connection issue:** `{str(last_error)}`\n\n"
     yield f"### 📄 Matched Context:\n\n{context}"
 
