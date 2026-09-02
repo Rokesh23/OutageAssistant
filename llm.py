@@ -1,8 +1,15 @@
 import os
-import ollama
 from config import CHAT_MODEL
 
 os.environ["OLLAMA_KEEP_ALIVE"] = "-1"
+
+# Safely handle environments where ollama module or local service is missing (e.g. Streamlit Cloud)
+try:
+    import ollama
+    HAS_OLLAMA = True
+except ImportError:
+    HAS_OLLAMA = False
+
 
 def ask_llm_stream(question, context):
     system_prompt = (
@@ -24,22 +31,37 @@ USER QUESTION:
 Provide a direct, concise response based strictly on the context above.
 """
 
-    stream = ollama.chat(
-        model=CHAT_MODEL,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
-        stream=True,
-        keep_alive=-1,
-        options={
-            "temperature": 0.0,
-            "num_predict": 300,
-            "num_thread": 8,
-        },
-    )
+    # Fallback when running on Streamlit Cloud where Ollama is not installed/running
+    if not HAS_OLLAMA:
+        yield "⚠️ **Note:** Running on Cloud environment (Ollama local service is offline).\n\n"
+        yield "### 📄 Matched RCA Context:\n\n"
+        yield context if context else "Sorry, I could not find any RCA document related to your query in the indexed records."
+        return
 
-    for chunk in stream:
-        yield chunk["message"]["content"]
+    try:
+        stream = ollama.chat(
+            model=CHAT_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            stream=True,
+            keep_alive=-1,
+            options={
+                "temperature": 0.0,
+                "num_predict": 300,
+                "num_thread": 8,
+            },
+        )
+
+        for chunk in stream:
+            yield chunk["message"]["content"]
+
+    except Exception:
+        # Graceful fallback if Ollama service is not reachable
+        yield "⚠️ **Unable to connect to local Ollama service.**\n\n"
+        yield "### 📄 Matched RCA Context:\n\n"
+        yield context if context else "Sorry, I could not find any RCA document related to your query in the indexed records."
+
 
 ask_llm = ask_llm_stream
