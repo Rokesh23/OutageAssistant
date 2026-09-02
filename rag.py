@@ -1,5 +1,6 @@
 import os
 import pickle
+import re
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -29,7 +30,7 @@ def resolve_file_paths():
     return index_file, metadata_file
 
 INDEX_FILE, METADATA_FILE = resolve_file_paths()
-TOP_K = 3
+TOP_K = 5
 
 try:
     import faiss
@@ -62,16 +63,47 @@ def search_documents(query: str, top_k: int = TOP_K):
         msg = "Sorry, I could not find any RCA document related to your query in the indexed records."
         return msg, [], 0.0
 
-    query_words = set(query.lower().split())
+    query_raw = query.strip().lower()
+    # Normalize query terms (e.g. split on spaces, remove punctuation)
+    query_terms = [t for t in re.split(r'\W+', query_raw) if t]
+
     matches = []
     
     for item in metadata_data:
         text = item.get("text", "") if isinstance(item, dict) else str(item)
-        score = sum(1 for word in query_words if word in text.lower())
+        source = item.get("source", "RCA Record") if isinstance(item, dict) else "RCA Record"
+        text_lower = text.lower()
+
+        score = 0.0
+
+        # 1. High-Priority Exact Match Boost (For Incident IDs like INC0176274 or key phrases)
+        if query_raw in text_lower:
+            score += 10.0
+
+        # 2. Individual Term Matching
+        for term in query_terms:
+            if len(term) > 2 and term in text_lower:
+                score += 2.0
+            elif term in text_lower:
+                score += 0.5
+
+        # 3. Synonym / Keyword alias mapping for common outage terms
+        aliases = {
+            "timeout": ["504", "timed out", "slow", "gateway"],
+            "504": ["timeout", "gateway", "bad gateway"],
+            "502": ["bad gateway", "ui package"],
+            "503": ["patching", "unavailable"],
+            "ssl": ["cert", "certificate", "err_bad_ssl"]
+        }
+
+        for term in query_terms:
+            if term in aliases:
+                for alias in aliases[term]:
+                    if alias in text_lower:
+                        score += 1.5
+
         if score > 0:
-            source = item.get("source", "RCA Record") if isinstance(item, dict) else "RCA Record"
-            # Limit chunk text length to prevent context overflow
-            truncated_text = text[:800] + "..." if len(text) > 800 else text
+            truncated_text = text[:1000] if len(text) > 1000 else text
             formatted_item = {
                 "text": truncated_text,
                 "source": source,
@@ -90,7 +122,7 @@ def search_documents(query: str, top_k: int = TOP_K):
     context_str = "\n\n---\n\n".join([m[2] for m in top_matches])
     
     top_score = top_matches[0][0]
-    confidence = min(round((top_score / max(len(query_words), 1)) * 100, 1), 100.0)
+    confidence = min(round((top_score / 10.0) * 100, 1), 100.0)
 
     return context_str, matched_results, confidence
 
