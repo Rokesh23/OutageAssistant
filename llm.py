@@ -37,12 +37,10 @@ Provide a direct, concise response based strictly on the context above.
         yield context if context else "Sorry, I could not find any RCA document related to your query in the indexed records."
         return
 
-    # List of active, valid models on Groq to try in order
+    # List of active models supported on Groq
     candidate_models = [
         "llama-3.3-70b-versatile",
-        "llama3-8b-8192",
-        "llama3-70b-8192",
-        "mixtral-8x7b-32768"
+        "llama-3.1-8b-instant"
     ]
 
     client = Groq(api_key=GROQ_API_KEY)
@@ -64,13 +62,13 @@ Provide a direct, concise response based strictly on the context above.
             for chunk in completion:
                 if chunk.choices[0].delta.content:
                     yield chunk.choices[0].delta.content
-            return  # Successfully streamed complete answer
+            return  # Successfully completed streaming
 
         except Exception as e:
             last_error = e
-            continue  # Fall back to next candidate model if error occurs
+            continue  # Fallback to next model if current fails
 
-    # If all Groq models fail, output context gracefully
+    # If all candidate models fail
     yield f"⚠️ **Error connecting to Groq AI:** {str(last_error)}\n\n"
     yield f"### 📄 Matched Context:\n\n{context}"
 
