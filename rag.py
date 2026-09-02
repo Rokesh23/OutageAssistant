@@ -1,13 +1,16 @@
 import os
 import pickle
 
+# Hardcoded defaults to ensure no dependency on config.py
+INDEX_FILE = "faiss_index.bin"
+METADATA_FILE = "metadata.pkl"
+TOP_K = 3
+
 try:
     import faiss
     HAS_FAISS = True
 except ImportError:
     HAS_FAISS = False
-
-from config import INDEX_FILE, METADATA_FILE, TOP_K
 
 def load_index():
     if not os.path.exists(INDEX_FILE) or not os.path.exists(METADATA_FILE):
@@ -20,13 +23,15 @@ def load_index():
     except Exception:
         return None, None
 
-# Load metadata globally for app.py imports
+# Load metadata globally so "from rag import metadata" works in app.py
 _, metadata = load_index()
+if metadata is None:
+    metadata = []
 
 def search_documents(query: str, top_k: int = TOP_K):
     index, metadata_data = load_index()
     
-    if metadata_data is None:
+    if not metadata_data:
         return "Sorry, I could not find any RCA document related to your query in the indexed records."
 
     query_words = set(query.lower().split())
@@ -34,7 +39,7 @@ def search_documents(query: str, top_k: int = TOP_K):
     
     for item in metadata_data:
         text = item.get("text", "")
-        # Score based on keyword matches
+        # Calculate keyword overlap score
         score = sum(1 for word in query_words if word in text.lower())
         if score > 0:
             source = item.get("source", "Unknown Source")
@@ -42,12 +47,12 @@ def search_documents(query: str, top_k: int = TOP_K):
             
     matches.sort(key=lambda x: x[0], reverse=True)
     
-    # Return clear message if no relevant keywords are found
+    # Return clear message if no keywords match
     if not matches:
         return "Sorry, I could not find any RCA document related to your query in the indexed records."
 
     results = [m[1] for m in matches[:top_k]]
     return "\n\n---\n\n".join(results)
 
-# Alias 'retrieve' to 'search_documents' so app.py import works seamlessly
+# Alias retrieve to search_documents so "from rag import retrieve" works in app.py
 retrieve = search_documents
