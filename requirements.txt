@@ -1,0 +1,7 @@
+streamlit
+faiss-cpu
+python-docx
+openpyxl
+python-pptx
+numpy
+requests
