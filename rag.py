@@ -1,10 +1,8 @@
 import os
 import pickle
 
-# Base directory setup
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Check for index files in root and inside 'index/' folder
 POSSIBLE_PATHS = [
     os.path.join(BASE_DIR, "index"),
     BASE_DIR
@@ -52,7 +50,6 @@ def load_index():
         return None, None
 
 
-# Load metadata globally so app.py displays accurate counts in sidebar
 _, metadata = load_index()
 if metadata is None:
     metadata = []
@@ -69,17 +66,18 @@ def search_documents(query: str, top_k: int = TOP_K):
     matches = []
     
     for item in metadata_data:
-        # Check dictionary fields or string items
         text = item.get("text", "") if isinstance(item, dict) else str(item)
         score = sum(1 for word in query_words if word in text.lower())
         if score > 0:
             source = item.get("source", "RCA Record") if isinstance(item, dict) else "RCA Record"
+            # Limit individual chunk text length to prevent context overflow
+            truncated_text = text[:1200] + "..." if len(text) > 1200 else text
             formatted_item = {
-                "text": text,
+                "text": truncated_text,
                 "source": source,
                 "score": score
             }
-            matches.append((score, formatted_item, f"Source ({source}): {text}"))
+            matches.append((score, formatted_item, f"Source ({source}): {truncated_text}"))
             
     matches.sort(key=lambda x: x[0], reverse=True)
     
