@@ -20,8 +20,8 @@ def ask_llm_stream(question, context):
         "'Sorry, I could not find any RCA document related to your query in the indexed records.'"
     )
 
-    # Trim context to max 3500 chars to avoid exceeding context token limits
-    safe_context = context[:3500] if context else ""
+    # Safely trim context to max 2500 characters to prevent Groq 400 token overflow errors
+    safe_context = context[:2500] if context else ""
 
     user_prompt = f"""
 RCA DOCUMENTS CONTEXT:
@@ -41,6 +41,7 @@ Provide a direct, concise response based strictly on the context above.
 
     client = Groq(api_key=GROQ_API_KEY)
     
+    # Priority list of working models on Groq
     preferred_models = [
         "llama-3.3-70b-versatile",
         "llama-3.1-8b-instant",
