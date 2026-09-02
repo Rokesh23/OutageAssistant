@@ -1,9 +1,15 @@
 import os
 import pickle
 
-# Hardcoded defaults to ensure no external config issues
-INDEX_FILE = "faiss_index.bin"
-METADATA_FILE = "metadata.pkl"
+# Resolve base directory path dynamically for Streamlit Cloud
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Check potential filenames for index & metadata
+INDEX_FILE = os.path.join(BASE_DIR, "faiss_index.bin")
+if not os.path.exists(INDEX_FILE) and os.path.exists(os.path.join(BASE_DIR, "faiss_index.index")):
+    INDEX_FILE = os.path.join(BASE_DIR, "faiss_index.index")
+
+METADATA_FILE = os.path.join(BASE_DIR, "metadata.pkl")
 TOP_K = 3
 
 try:
@@ -25,7 +31,7 @@ def load_index():
         return None, None
 
 
-# Load metadata globally so "from rag import metadata" works in app.py
+# Load metadata globally so app.py can read lengths for sidebar counters
 _, metadata = load_index()
 if metadata is None:
     metadata = []
@@ -43,7 +49,7 @@ def search_documents(query: str, top_k: int = TOP_K):
     
     for item in metadata_data:
         text = item.get("text", "")
-        # Calculate keyword overlap score
+        # Score based on matching query words
         score = sum(1 for word in query_words if word in text.lower())
         if score > 0:
             source = item.get("source", "Unknown Source")
@@ -54,10 +60,9 @@ def search_documents(query: str, top_k: int = TOP_K):
             }
             matches.append((score, formatted_item, f"Source ({source}): {text}"))
             
-    # Sort matches by keyword relevance score in descending order
+    # Sort matches by relevance score
     matches.sort(key=lambda x: x[0], reverse=True)
     
-    # If no keyword matches are found, return clear empty result tuple
     if not matches:
         msg = "Sorry, I could not find any RCA document related to your query in the indexed records."
         return msg, [], 0.0
@@ -66,12 +71,11 @@ def search_documents(query: str, top_k: int = TOP_K):
     matched_results = [m[1] for m in top_matches]
     context_str = "\n\n---\n\n".join([m[2] for m in top_matches])
     
-    # Calculate a simple confidence percentage based on keyword match hits
     top_score = top_matches[0][0]
     confidence = min(round((top_score / max(len(query_words), 1)) * 100, 1), 100.0)
 
     return context_str, matched_results, confidence
 
 
-# Alias retrieve to search_documents so app.py unpacks (context, results, confidence)
+# Alias retrieve function for app.py
 retrieve = search_documents
