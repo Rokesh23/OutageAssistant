@@ -70,8 +70,8 @@ def search_documents(query: str, top_k: int = TOP_K):
         score = sum(1 for word in query_words if word in text.lower())
         if score > 0:
             source = item.get("source", "RCA Record") if isinstance(item, dict) else "RCA Record"
-            # Limit individual chunk text length to prevent context overflow
-            truncated_text = text[:1200] + "..." if len(text) > 1200 else text
+            # Limit chunk text length to prevent context overflow
+            truncated_text = text[:800] + "..." if len(text) > 800 else text
             formatted_item = {
                 "text": truncated_text,
                 "source": source,
