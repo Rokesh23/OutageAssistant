@@ -31,21 +31,41 @@ USER QUESTION:
 Provide a direct, concise response based strictly on the context above.
 """
 
-    if not HAS_GROQ:
-        yield "⚠️ **Groq API Key missing.** Please configure `GROQ_API_KEY` in Streamlit Cloud Secrets.\n\n"
+    if not HAS_GROQ or not GROQ_API_KEY:
+        yield "⚠️ **Groq API Key missing or not configured in Streamlit Secrets.**\n\n"
         yield "### 📄 Matched RCA Context:\n\n"
         yield context if context else "Sorry, I could not find any RCA document related to your query in the indexed records."
         return
 
-    # List of active models supported on Groq
-    candidate_models = [
-        "llama-3.3-70b-versatile",
-        "llama-3.1-8b-instant"
-    ]
-
     client = Groq(api_key=GROQ_API_KEY)
-    last_error = None
+    
+    preferred_models = [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "llama3-70b-8192",
+        "llama3-8b-8192"
+    ]
+    
+    available_models = []
+    try:
+        models_list = client.models.list()
+        available_models = [m.id for m in models_list.data]
+    except Exception:
+        pass
 
+    candidate_models = []
+    for model in preferred_models:
+        if not available_models or model in available_models:
+            candidate_models.append(model)
+            
+    for model in available_models:
+        if model not in candidate_models and ("llama" in model or "mixtral" in model or "gemma" in model):
+            candidate_models.append(model)
+
+    if not candidate_models:
+        candidate_models = preferred_models
+
+    last_error = None
     for model_name in candidate_models:
         try:
             completion = client.chat.completions.create(
@@ -62,14 +82,13 @@ Provide a direct, concise response based strictly on the context above.
             for chunk in completion:
                 if chunk.choices[0].delta.content:
                     yield chunk.choices[0].delta.content
-            return  # Successfully completed streaming
+            return
 
         except Exception as e:
             last_error = e
-            continue  # Fallback to next model if current fails
+            continue
 
-    # If all candidate models fail
-    yield f"⚠️ **Error connecting to Groq AI:** {str(last_error)}\n\n"
+    yield f"⚠️ **Groq API Connection issue:** `{str(last_error)}`\n\n"
     yield f"### 📄 Matched Context:\n\n{context}"
 
 
