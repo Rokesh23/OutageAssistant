@@ -16,58 +16,58 @@ def read_docx(file_path):
     """Extracts all text including paragraphs and tables from a .docx file."""
     if not HAS_DOCX:
         return ""
-    
-    doc = docx.Document(file_path)
-    full_text = []
-
-    # Extract paragraph text
-    for para in doc.paragraphs:
-        if para.text.strip():
-            full_text.append(para.text.strip())
-
-    # Extract table text
-    for table in doc.tables:
-        for row in table.rows:
-            row_data = [cell.text.strip() for cell in row.cells if cell.text.strip()]
-            if row_data:
-                full_text.append(" | ".join(row_data))
-
-    return "\n".join(full_text)
+    try:
+        doc = docx.Document(file_path)
+        full_text = []
+        for para in doc.paragraphs:
+            if para.text.strip():
+                full_text.append(para.text.strip())
+        for table in doc.tables:
+            for row in table.rows:
+                row_data = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+                if row_data:
+                    full_text.append(" | ".join(row_data))
+        return "\n".join(full_text)
+    except Exception:
+        return ""
 
 
 def load_all_rca_docs():
-    """Reads all .docx, .txt, and .md files directly from the docs/ directory."""
+    """Finds and reads all .docx files in docs/ or root directory."""
     documents = []
-    if not os.path.exists(DOCS_DIR):
-        return documents
+    file_paths = []
+    
+    # Check docs/ directory
+    if os.path.exists(DOCS_DIR):
+        file_paths.extend(glob.glob(os.path.join(DOCS_DIR, "*.docx")))
+        file_paths.extend(glob.glob(os.path.join(DOCS_DIR, "*.txt")))
+        file_paths.extend(glob.glob(os.path.join(DOCS_DIR, "*.md")))
 
-    # Get all .docx, .txt, and .md files
-    file_paths = (
-        glob.glob(os.path.join(DOCS_DIR, "*.docx")) +
-        glob.glob(os.path.join(DOCS_DIR, "*.txt")) +
-        glob.glob(os.path.join(DOCS_DIR, "*.md"))
-    )
+    # Check root directory as fallback
+    file_paths.extend(glob.glob(os.path.join(BASE_DIR, "*.docx")))
 
-    for path in file_paths:
+    # Deduplicate and remove temporary Office files (~$)
+    unique_paths = list(set(file_paths))
+
+    for path in unique_paths:
         filename = os.path.basename(path)
-        # Skip temporary Office lock files starting with ~$
         if filename.startswith("~$"):
             continue
 
-        try:
-            if filename.endswith(".docx"):
-                content = read_docx(path)
-            else:
+        if filename.endswith(".docx"):
+            content = read_docx(path)
+        else:
+            try:
                 with open(path, "r", encoding="utf-8") as f:
                     content = f.read().strip()
+            except Exception:
+                content = ""
 
-            if content:
-                documents.append({
-                    "source": filename,
-                    "text": content
-                })
-        except Exception:
-            continue
+        if content:
+            documents.append({
+                "source": filename,
+                "text": content
+            })
 
     return documents
 
@@ -76,12 +76,11 @@ def search_documents(query: str, top_k: int = 14):
     documents = load_all_rca_docs()
 
     if not documents:
-        msg = "Sorry, I could not find any RCA documents (.docx) in the docs/ folder."
+        msg = "Sorry, I could not find any RCA documents (.docx) in the repository."
         return msg, [], 0.0
 
     query_raw = query.strip().lower()
 
-    # Determine if broad request for all incidents/documents
     is_broad_query = any(phrase in query_raw for phrase in [
         "all incidents", "list incidents", "all rca", "show all", "total incidents", "all documents"
     ])
@@ -98,18 +97,14 @@ def search_documents(query: str, top_k: int = 14):
         if is_broad_query:
             score = 1.0
         else:
-            # Exact string boost (e.g., incident numbers)
             if query_raw in text_lower:
                 score += 10.0
-
-            # Term matching
             for term in query_terms:
                 if len(term) > 2 and term in text_lower:
                     score += 2.0
                 elif term in text_lower:
                     score += 0.5
 
-            # Synonym / Keyword aliases
             aliases = {
                 "timeout": ["504", "timed out", "slow", "gateway"],
                 "504": ["timeout", "gateway", "bad gateway"],
@@ -124,12 +119,14 @@ def search_documents(query: str, top_k: int = 14):
                             score += 1.5
 
         if score > 0:
+            # Create a compact extract of each doc (first 600 chars) to stay within LLM context limit
+            compact_text = text[:600] if len(text) > 600 else text
             formatted_item = {
                 "text": text,
                 "source": source,
                 "score": score
             }
-            matches.append((score, formatted_item, f"Source ({source}):\n{text}"))
+            matches.append((score, formatted_item, f"Source ({source}):\n{compact_text}"))
 
     matches.sort(key=lambda x: x[0], reverse=True)
 
