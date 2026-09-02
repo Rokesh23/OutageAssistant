@@ -12,12 +12,16 @@ except ImportError:
 
 def ask_llm_stream(question, context):
     system_prompt = (
-        "You are an IT Support RCA Assistant. Answer strictly using ONLY the provided RCA Documents.\n"
-        "Keep your answer concise and direct.\n"
-        "If no information is found, state: 'Sorry, I could not find any RCA document related to your query in the indexed records.'"
+        "You are an expert IT Support RCA Assistant.\n"
+        "Your task is to answer user queries strictly using ONLY the provided RCA Documents context.\n"
+        "FORMATTING RULES:\n"
+        "1. If the user asks to list incidents, show all incidents, or summarize RCAs, ALWAYS present the response in a complete, neat Markdown table format.\n"
+        "2. Table headers must be: | Incident Number | Project / Env | Start Time | End Time | Severity | Summary / Issue | Root Cause | Fix / Resolution |\n"
+        "3. Do not truncate table rows mid-way.\n"
+        "4. If specific information is missing for a query, state cleanly: 'Sorry, I could not find any RCA document related to your query in the indexed records.'"
     )
 
-    safe_context = context[:1500] if context else ""
+    safe_context = context[:3500] if context else ""
     user_prompt = f"RCA CONTEXT:\n{safe_context}\n\nUSER QUESTION:\n{question}"
 
     if not HAS_GROQ or not GROQ_API_KEY:
@@ -28,7 +32,7 @@ def ask_llm_stream(question, context):
 
     client = Groq(api_key=GROQ_API_KEY)
 
-    # 1. Fetch live models currently active on your Groq key
+    # Fetch live available models for your specific key
     active_models = []
     try:
         models_list = client.models.list()
@@ -36,10 +40,8 @@ def ask_llm_stream(question, context):
     except Exception:
         pass
 
-    # Preferred active models sorted by availability in current Groq API specs
     preferred_order = [
         "openai/gpt-oss-20b",
-        "openai/gpt-oss-120b",
         "llama-3.3-70b-versatile",
         "llama-3.1-8b-instant"
     ]
@@ -50,12 +52,11 @@ def ask_llm_stream(question, context):
             if p in active_models:
                 models_to_try.append(p)
         for m in active_models:
-            if m not in models_to_try and ("gpt" in m or "llama" in m or "qwen" in m):
+            if m not in models_to_try and ("llama" in m or "gpt" in m):
                 models_to_try.append(m)
 
-    # Hard fallback list if list call fails
     if not models_to_try:
-        models_to_try = ["openai/gpt-oss-20b", "llama-3.3-70b-versatile"]
+        models_to_try = ["llama-3.3-70b-versatile"]
 
     last_error = None
     for model_name in models_to_try:
@@ -67,20 +68,19 @@ def ask_llm_stream(question, context):
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.0,
-                max_tokens=300,
+                max_tokens=1500,  # Higher limit so full Markdown tables complete without truncation
                 stream=True,
             )
 
             for chunk in completion:
                 if chunk.choices[0].delta.content:
                     yield chunk.choices[0].delta.content
-            return  # Successful execution
+            return
 
         except Exception as e:
             last_error = e
             continue
 
-    # Fallback response if all model endpoints hit issues
     yield f"⚠️ **Groq API Connection issue:** `{str(last_error)}`\n\n"
     yield f"### 📄 Matched Context:\n\n{context}"
 
