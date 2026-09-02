@@ -30,7 +30,6 @@ def resolve_file_paths():
     return index_file, metadata_file
 
 INDEX_FILE, METADATA_FILE = resolve_file_paths()
-TOP_K = 5
 
 try:
     import faiss
@@ -56,7 +55,7 @@ if metadata is None:
     metadata = []
 
 
-def search_documents(query: str, top_k: int = TOP_K):
+def search_documents(query: str, top_k: int = 5):
     index, metadata_data = load_index()
     
     if not metadata_data:
@@ -64,7 +63,11 @@ def search_documents(query: str, top_k: int = TOP_K):
         return msg, [], 0.0
 
     query_raw = query.strip().lower()
-    # Normalize query terms (e.g. split on spaces, remove punctuation)
+    
+    # Expand retrieval depth for listing queries
+    if any(phrase in query_raw for phrase in ["all incidents", "list incidents", "all rca", "show all", "total incidents"]):
+        top_k = 15
+
     query_terms = [t for t in re.split(r'\W+', query_raw) if t]
 
     matches = []
@@ -76,18 +79,18 @@ def search_documents(query: str, top_k: int = TOP_K):
 
         score = 0.0
 
-        # 1. High-Priority Exact Match Boost (For Incident IDs like INC0176274 or key phrases)
+        # Exact string match boost (e.g., INC0176274)
         if query_raw in text_lower:
             score += 10.0
 
-        # 2. Individual Term Matching
+        # Term matching
         for term in query_terms:
             if len(term) > 2 and term in text_lower:
                 score += 2.0
             elif term in text_lower:
                 score += 0.5
 
-        # 3. Synonym / Keyword alias mapping for common outage terms
+        # Synonym / Error Alias matching
         aliases = {
             "timeout": ["504", "timed out", "slow", "gateway"],
             "504": ["timeout", "gateway", "bad gateway"],
@@ -102,7 +105,11 @@ def search_documents(query: str, top_k: int = TOP_K):
                     if alias in text_lower:
                         score += 1.5
 
-        if score > 0:
+        if score > 0 or "all" in query_raw:
+            # If asking for all incidents, assign base score so all entries get included
+            if "all" in query_raw:
+                score += 1.0
+
             truncated_text = text[:1000] if len(text) > 1000 else text
             formatted_item = {
                 "text": truncated_text,
