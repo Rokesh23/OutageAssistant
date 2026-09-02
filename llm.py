@@ -12,26 +12,15 @@ except ImportError:
 
 def ask_llm_stream(question, context):
     system_prompt = (
-        "You are an accurate IT Support RCA Assistant.\n"
-        "Your task is to answer questions strictly using ONLY the provided RCA Documents.\n"
-        "Do NOT mention outside systems like Teams, NotebookLM, or ChatGPT unless explicitly written in the context.\n"
-        "Do NOT output template labels or debug text.\n"
-        "If the context does not contain relevant information, state clearly: "
-        "'Sorry, I could not find any RCA document related to your query in the indexed records.'"
+        "You are an IT Support RCA Assistant. Answer strictly using ONLY the provided RCA Documents. "
+        "Keep your answer concise and direct. "
+        "If no information is found, state: 'Sorry, I could not find any RCA document related to your query in the indexed records.'"
     )
 
-    # Safely trim context to max 2500 characters to prevent Groq 400 token overflow errors
-    safe_context = context[:2500] if context else ""
+    # Strictly limit context length to 1200 characters to prevent Groq 400 token error
+    safe_context = context[:1200] if context else ""
 
-    user_prompt = f"""
-RCA DOCUMENTS CONTEXT:
-{safe_context}
-
-USER QUESTION:
-{question}
-
-Provide a direct, concise response based strictly on the context above.
-"""
+    user_prompt = f"RCA CONTEXT:\n{safe_context}\n\nUSER QUESTION:\n{question}"
 
     if not HAS_GROQ or not GROQ_API_KEY:
         yield "⚠️ **Groq API Key missing or not configured in Streamlit Secrets.**\n\n"
@@ -41,35 +30,15 @@ Provide a direct, concise response based strictly on the context above.
 
     client = Groq(api_key=GROQ_API_KEY)
     
-    # Priority list of working models on Groq
-    preferred_models = [
+    # Try stable, current Groq production models explicitly
+    models_to_try = [
         "llama-3.3-70b-versatile",
         "llama-3.1-8b-instant",
-        "llama3-70b-8192",
-        "llama3-8b-8192"
+        "mixtral-8x7b-32768"
     ]
-    
-    available_models = []
-    try:
-        models_list = client.models.list()
-        available_models = [m.id for m in models_list.data]
-    except Exception:
-        pass
-
-    candidate_models = []
-    for model in preferred_models:
-        if not available_models or model in available_models:
-            candidate_models.append(model)
-            
-    for model in available_models:
-        if model not in candidate_models and ("llama" in model or "mixtral" in model or "gemma" in model):
-            candidate_models.append(model)
-
-    if not candidate_models:
-        candidate_models = preferred_models
 
     last_error = None
-    for model_name in candidate_models:
+    for model_name in models_to_try:
         try:
             completion = client.chat.completions.create(
                 model=model_name,
@@ -78,19 +47,20 @@ Provide a direct, concise response based strictly on the context above.
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.0,
-                max_tokens=400,
+                max_tokens=250,
                 stream=True,
             )
 
             for chunk in completion:
                 if chunk.choices[0].delta.content:
                     yield chunk.choices[0].delta.content
-            return
+            return  # Success!
 
         except Exception as e:
             last_error = e
             continue
 
+    # Fallback response if all API model attempts fail
     yield f"⚠️ **Groq API Connection issue:** `{str(last_error)}`\n\n"
     yield f"### 📄 Matched Context:\n\n{context}"
 
