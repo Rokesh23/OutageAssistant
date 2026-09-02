@@ -1,134 +1,147 @@
 import os
-import pickle
+import glob
 import re
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-POSSIBLE_PATHS = [
-    os.path.join(BASE_DIR, "index"),
-    BASE_DIR
-]
-
-def resolve_file_paths():
-    metadata_file = None
-    index_file = None
-    
-    for path in POSSIBLE_PATHS:
-        meta_test = os.path.join(path, "metadata.pkl")
-        if os.path.exists(meta_test):
-            metadata_file = meta_test
-            
-        for idx_name in ["index.faiss", "faiss_index.bin", "faiss_index.index"]:
-            idx_test = os.path.join(path, idx_name)
-            if os.path.exists(idx_test):
-                index_file = idx_test
-                break
-                
-        if metadata_file:
-            break
-            
-    return index_file, metadata_file
-
-INDEX_FILE, METADATA_FILE = resolve_file_paths()
-
 try:
-    import faiss
-    HAS_FAISS = True
+    import docx
+    HAS_DOCX = True
 except ImportError:
-    HAS_FAISS = False
+    HAS_DOCX = False
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DOCS_DIR = os.path.join(BASE_DIR, "docs")
 
 
-def load_index():
-    if not METADATA_FILE or not os.path.exists(METADATA_FILE):
-        return None, None
-    try:
-        index = faiss.read_index(INDEX_FILE) if (HAS_FAISS and INDEX_FILE and os.path.exists(INDEX_FILE)) else None
-        with open(METADATA_FILE, "rb") as f:
-            metadata_data = pickle.load(f)
-        return index, metadata_data
-    except Exception:
-        return None, None
-
-
-_, metadata = load_index()
-if metadata is None:
-    metadata = []
-
-
-def search_documents(query: str, top_k: int = 5):
-    index, metadata_data = load_index()
+def read_docx(file_path):
+    """Extracts all text including paragraphs and tables from a .docx file."""
+    if not HAS_DOCX:
+        return ""
     
-    if not metadata_data:
-        msg = "Sorry, I could not find any RCA document related to your query in the indexed records."
+    doc = docx.Document(file_path)
+    full_text = []
+
+    # Extract paragraph text
+    for para in doc.paragraphs:
+        if para.text.strip():
+            full_text.append(para.text.strip())
+
+    # Extract table text
+    for table in doc.tables:
+        for row in table.rows:
+            row_data = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+            if row_data:
+                full_text.append(" | ".join(row_data))
+
+    return "\n".join(full_text)
+
+
+def load_all_rca_docs():
+    """Reads all .docx, .txt, and .md files directly from the docs/ directory."""
+    documents = []
+    if not os.path.exists(DOCS_DIR):
+        return documents
+
+    # Get all .docx, .txt, and .md files
+    file_paths = (
+        glob.glob(os.path.join(DOCS_DIR, "*.docx")) +
+        glob.glob(os.path.join(DOCS_DIR, "*.txt")) +
+        glob.glob(os.path.join(DOCS_DIR, "*.md"))
+    )
+
+    for path in file_paths:
+        filename = os.path.basename(path)
+        # Skip temporary Office lock files starting with ~$
+        if filename.startswith("~$"):
+            continue
+
+        try:
+            if filename.endswith(".docx"):
+                content = read_docx(path)
+            else:
+                with open(path, "r", encoding="utf-8") as f:
+                    content = f.read().strip()
+
+            if content:
+                documents.append({
+                    "source": filename,
+                    "text": content
+                })
+        except Exception:
+            continue
+
+    return documents
+
+
+def search_documents(query: str, top_k: int = 14):
+    documents = load_all_rca_docs()
+
+    if not documents:
+        msg = "Sorry, I could not find any RCA documents (.docx) in the docs/ folder."
         return msg, [], 0.0
 
     query_raw = query.strip().lower()
-    
-    # Expand retrieval depth for listing queries
-    if any(phrase in query_raw for phrase in ["all incidents", "list incidents", "all rca", "show all", "total incidents"]):
-        top_k = 15
 
-    query_terms = [t for t in re.split(r'\W+', query_raw) if t]
+    # Determine if broad request for all incidents/documents
+    is_broad_query = any(phrase in query_raw for phrase in [
+        "all incidents", "list incidents", "all rca", "show all", "total incidents", "all documents"
+    ])
 
     matches = []
-    
-    for item in metadata_data:
-        text = item.get("text", "") if isinstance(item, dict) else str(item)
-        source = item.get("source", "RCA Record") if isinstance(item, dict) else "RCA Record"
-        text_lower = text.lower()
+    query_terms = [t for t in re.split(r'\W+', query_raw) if t]
 
+    for item in documents:
+        text = item["text"]
+        source = item["source"]
+        text_lower = text.lower()
         score = 0.0
 
-        # Exact string match boost (e.g., INC0176274)
-        if query_raw in text_lower:
-            score += 10.0
+        if is_broad_query:
+            score = 1.0
+        else:
+            # Exact string boost (e.g., incident numbers)
+            if query_raw in text_lower:
+                score += 10.0
 
-        # Term matching
-        for term in query_terms:
-            if len(term) > 2 and term in text_lower:
-                score += 2.0
-            elif term in text_lower:
-                score += 0.5
+            # Term matching
+            for term in query_terms:
+                if len(term) > 2 and term in text_lower:
+                    score += 2.0
+                elif term in text_lower:
+                    score += 0.5
 
-        # Synonym / Error Alias matching
-        aliases = {
-            "timeout": ["504", "timed out", "slow", "gateway"],
-            "504": ["timeout", "gateway", "bad gateway"],
-            "502": ["bad gateway", "ui package"],
-            "503": ["patching", "unavailable"],
-            "ssl": ["cert", "certificate", "err_bad_ssl"]
-        }
+            # Synonym / Keyword aliases
+            aliases = {
+                "timeout": ["504", "timed out", "slow", "gateway"],
+                "504": ["timeout", "gateway", "bad gateway"],
+                "502": ["bad gateway", "ui package"],
+                "503": ["patching", "unavailable"],
+                "ssl": ["cert", "certificate", "err_bad_ssl"]
+            }
+            for term in query_terms:
+                if term in aliases:
+                    for alias in aliases[term]:
+                        if alias in text_lower:
+                            score += 1.5
 
-        for term in query_terms:
-            if term in aliases:
-                for alias in aliases[term]:
-                    if alias in text_lower:
-                        score += 1.5
-
-        if score > 0 or "all" in query_raw:
-            # If asking for all incidents, assign base score so all entries get included
-            if "all" in query_raw:
-                score += 1.0
-
-            truncated_text = text[:1000] if len(text) > 1000 else text
+        if score > 0:
             formatted_item = {
-                "text": truncated_text,
+                "text": text,
                 "source": source,
                 "score": score
             }
-            matches.append((score, formatted_item, f"Source ({source}): {truncated_text}"))
-            
+            matches.append((score, formatted_item, f"Source ({source}):\n{text}"))
+
     matches.sort(key=lambda x: x[0], reverse=True)
-    
+
     if not matches:
         msg = "Sorry, I could not find any RCA document related to your query in the indexed records."
         return msg, [], 0.0
 
-    top_matches = matches[:top_k]
-    matched_results = [m[1] for m in top_matches]
-    context_str = "\n\n---\n\n".join([m[2] for m in top_matches])
-    
-    top_score = top_matches[0][0]
+    selected_matches = matches if is_broad_query else matches[:top_k]
+    matched_results = [m[1] for m in selected_matches]
+    context_str = "\n\n---\n\n".join([m[2] for m in selected_matches])
+
+    top_score = selected_matches[0][0]
     confidence = min(round((top_score / 10.0) * 100, 1), 100.0)
 
     return context_str, matched_results, confidence
