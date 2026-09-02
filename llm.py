@@ -22,7 +22,7 @@ def ask_llm_stream(question, context):
         "5. If specific information is missing or not found in context, explicitly state: 'Sorry, I could not find any RCA document related to your query in the indexed records.'"
     )
 
-    safe_context = context[:4000] if context else ""
+    safe_context = context[:12000] if context else ""
     user_prompt = f"RCA CONTEXT:\n{safe_context}\n\nUSER QUESTION:\n{question}"
 
     if not HAS_GROQ or not GROQ_API_KEY:
