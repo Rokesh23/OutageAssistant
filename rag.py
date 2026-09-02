@@ -1,15 +1,36 @@
 import os
 import pickle
 
-# Resolve base directory path dynamically for Streamlit Cloud
+# Base directory setup
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Check potential filenames for index & metadata
-INDEX_FILE = os.path.join(BASE_DIR, "faiss_index.bin")
-if not os.path.exists(INDEX_FILE) and os.path.exists(os.path.join(BASE_DIR, "faiss_index.index")):
-    INDEX_FILE = os.path.join(BASE_DIR, "faiss_index.index")
+# Check for index files in root and inside 'index/' folder
+POSSIBLE_PATHS = [
+    os.path.join(BASE_DIR, "index"),
+    BASE_DIR
+]
 
-METADATA_FILE = os.path.join(BASE_DIR, "metadata.pkl")
+def resolve_file_paths():
+    metadata_file = None
+    index_file = None
+    
+    for path in POSSIBLE_PATHS:
+        meta_test = os.path.join(path, "metadata.pkl")
+        if os.path.exists(meta_test):
+            metadata_file = meta_test
+            
+        for idx_name in ["index.faiss", "faiss_index.bin", "faiss_index.index"]:
+            idx_test = os.path.join(path, idx_name)
+            if os.path.exists(idx_test):
+                index_file = idx_test
+                break
+                
+        if metadata_file:
+            break
+            
+    return index_file, metadata_file
+
+INDEX_FILE, METADATA_FILE = resolve_file_paths()
 TOP_K = 3
 
 try:
@@ -20,10 +41,10 @@ except ImportError:
 
 
 def load_index():
-    if not os.path.exists(INDEX_FILE) or not os.path.exists(METADATA_FILE):
+    if not METADATA_FILE or not os.path.exists(METADATA_FILE):
         return None, None
     try:
-        index = faiss.read_index(INDEX_FILE) if HAS_FAISS else None
+        index = faiss.read_index(INDEX_FILE) if (HAS_FAISS and INDEX_FILE and os.path.exists(INDEX_FILE)) else None
         with open(METADATA_FILE, "rb") as f:
             metadata_data = pickle.load(f)
         return index, metadata_data
@@ -31,7 +52,7 @@ def load_index():
         return None, None
 
 
-# Load metadata globally so app.py can read lengths for sidebar counters
+# Load metadata globally so app.py displays accurate counts in sidebar
 _, metadata = load_index()
 if metadata is None:
     metadata = []
@@ -48,11 +69,11 @@ def search_documents(query: str, top_k: int = TOP_K):
     matches = []
     
     for item in metadata_data:
-        text = item.get("text", "")
-        # Score based on matching query words
+        # Check dictionary fields or string items
+        text = item.get("text", "") if isinstance(item, dict) else str(item)
         score = sum(1 for word in query_words if word in text.lower())
         if score > 0:
-            source = item.get("source", "Unknown Source")
+            source = item.get("source", "RCA Record") if isinstance(item, dict) else "RCA Record"
             formatted_item = {
                 "text": text,
                 "source": source,
@@ -60,7 +81,6 @@ def search_documents(query: str, top_k: int = TOP_K):
             }
             matches.append((score, formatted_item, f"Source ({source}): {text}"))
             
-    # Sort matches by relevance score
     matches.sort(key=lambda x: x[0], reverse=True)
     
     if not matches:
@@ -77,5 +97,4 @@ def search_documents(query: str, top_k: int = TOP_K):
     return context_str, matched_results, confidence
 
 
-# Alias retrieve function for app.py
 retrieve = search_documents
