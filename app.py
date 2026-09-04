@@ -9,17 +9,15 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for Background, Modern Styling, and Hidden Chrome Elements
+# Custom CSS for Dark Glassmorphism UI Theme and Hidden Chrome Elements
 custom_ui_style = """
     <style>
-    /* Import Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
+    /* Clean System Font Fallback */
     html, body, [data-testid="stAppViewContainer"] {
-        font-family: 'Inter', sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
         background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%) !important;
         background-attachment: fixed !important;
-        color: #f8fafc;
+        color: #f8fafc !important;
     }
 
     /* Hide Top Header, Toolbar, Footer, and Sidebar */
@@ -50,14 +48,15 @@ custom_ui_style = """
 
     /* Chat Messages Glassmorphism Cards */
     div[data-testid="stChatMessage"] {
-        background: rgba(30, 41, 59, 0.65) !important;
+        background: rgba(30, 41, 59, 0.75) !important;
         backdrop-filter: blur(12px) !important;
         -webkit-backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 12px !important;
         padding: 1rem 1.25rem !important;
         margin-bottom: 1rem !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+        color: #f8fafc !important;
     }
 
     /* Markdown Table Styling Inside Chat */
@@ -74,18 +73,19 @@ custom_ui_style = """
         color: #e0e7ff !important;
         padding: 10px 14px;
         text-align: left;
+        font-weight: 600;
     }
 
     div[data-testid="stChatMessage"] td {
-        background-color: rgba(15, 23, 42, 0.5) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        background-color: rgba(15, 23, 42, 0.6) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         padding: 10px 14px;
         color: #cbd5e1;
     }
 
     /* Chat Input Bar Styling */
     div[data-testid="stChatInput"] {
-        background: rgba(30, 41, 59, 0.8) !important;
+        background: rgba(30, 41, 59, 0.85) !important;
         border: 1px solid rgba(99, 102, 241, 0.4) !important;
         border-radius: 12px !important;
         box-shadow: 0 0 15px rgba(99, 102, 241, 0.2) !important;
@@ -101,7 +101,7 @@ st.markdown(custom_ui_style, unsafe_allow_html=True)
 
 # Main Interface Header
 st.markdown('<div class="title-text">🤖 Outage RCA Assistant</div>', unsafe_allow_html=True)
-st.markdown('<div class="caption-text">Ask questions about outages, root causes, resolutions, and lessons learned.</div>', unsafe_allow_html=True)
+st.markdown('<div class="caption-text">Ask questions about outages, root causes, resolutions and lessons learned.</div>', unsafe_allow_html=True)
 
 # Chat history initialization
 if "messages" not in st.session_state:
