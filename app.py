@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS to mimic the exact Dashboard UI layout and styling
+# Custom CSS to eliminate double headers, tighten margins, and remove page-level scrolling
 custom_ui_style = """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -18,6 +18,7 @@ custom_ui_style = """
         font-family: 'Inter', sans-serif;
         background-color: #f4f6f9 !important;
         color: #1e293b;
+        overflow: hidden !important; /* Prevents whole page scrolling */
     }
 
     /* Hide default Streamlit headers, menus, and footers */
@@ -29,117 +30,78 @@ custom_ui_style = """
     button[data-testid="baseButton-header"] { display: none; }
     div[data-testid="stStatusWidget"] { visibility: hidden; }
 
-    /* Top Navigation Bar */
-    .navbar {
-        background-color: #0b132b;
-        color: #ffffff;
-        padding: 12px 30px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid #1c2541;
-        margin-top: -60px;
-        margin-left: -5rem;
-        margin-right: -5rem;
-    }
-    .navbar-title {
-        font-weight: 700;
-        font-size: 1.1rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    /* Hero Section */
+    /* Single Compact Hero Section */
     .hero-section {
         background: linear-gradient(135deg, #0b132b 0%, #1c2541 60%, #3a506b 100%);
         color: white;
-        padding: 40px 60px 50px 60px;
+        padding: 16px 30px;
+        margin-top: -60px;
         margin-left: -5rem;
         margin-right: -5rem;
         border-bottom: 1px solid #3a506b;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     .hero-title {
-        font-size: 2.5rem;
+        font-size: 1.5rem;
         font-weight: 700;
-        margin-bottom: 8px;
+        margin-bottom: 2px;
     }
     .hero-subtitle {
         color: #cbd5e1;
-        font-size: 1.1rem;
-        margin-bottom: 4px;
-        font-weight: 500;
-    }
-    .hero-caption {
-        color: #94a3b8;
-        font-size: 0.95rem;
-        margin-bottom: 25px;
+        font-size: 0.85rem;
     }
 
-    /* Metric Cards */
+    /* Compact Metric Cards */
     .metric-card {
         background: #ffffff;
         border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 18px 20px;
+        border-radius: 8px;
+        padding: 10px 14px;
         display: flex;
         align-items: center;
-        gap: 16px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        gap: 12px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.03);
     }
     .metric-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 10px;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.4rem;
+        font-size: 1.1rem;
     }
     .metric-value {
-        font-size: 1.5rem;
+        font-size: 1.2rem;
         font-weight: 700;
         color: #0f172a;
-        line-height: 1.2;
+        line-height: 1.1;
     }
     .metric-label {
-        font-size: 0.85rem;
+        font-size: 0.75rem;
         color: #64748b;
         font-weight: 500;
     }
     .metric-subtext {
-        font-size: 0.75rem;
+        font-size: 0.68rem;
         color: #10b981;
-        margin-top: 2px;
-    }
-
-    /* Cards Container */
-    .section-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        margin-bottom: 20px;
-    }
-    .section-title {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin-bottom: 16px;
     }
 
     /* Action Tile Buttons */
     .stButton>button {
         width: 100%;
-        background-color: #f8fafc;
+        background-color: #ffffff;
         color: #1e293b;
         border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 12px 16px;
+        border-radius: 8px;
+        padding: 8px 12px;
         font-weight: 600;
+        font-size: 0.82rem;
         text-align: left;
         transition: all 0.2s ease;
+        margin-bottom: -10px;
     }
     .stButton>button:hover {
         background-color: #eff6ff;
@@ -147,46 +109,58 @@ custom_ui_style = """
         color: #2563eb;
     }
 
+    .section-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 8px;
+    }
+
+    /* Chat Container Internal Scroll */
+    div[data-testid="stChatMessageContainer"] {
+        max-height: 280px !important;
+        overflow-y: auto !important;
+        padding-right: 5px;
+    }
+
+    div[data-testid="stChatMessage"] {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        padding: 10px !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.02) !important;
+        font-size: 0.88rem;
+    }
+
     /* Footer */
     .footer {
         background-color: #0b132b;
         color: #64748b;
-        padding: 16px 40px;
+        padding: 6px 30px;
         margin-left: -5rem;
         margin-right: -5rem;
-        margin-top: 40px;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 0.85rem;
-    }
-
-    /* Table Adjustments */
-    div[data-testid="stChatMessage"] {
-        background: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 12px !important;
-        padding: 15px !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+        font-size: 0.75rem;
     }
     </style>
 """
 st.markdown(custom_ui_style, unsafe_allow_html=True)
 
-# Top Navigation Bar
-st.markdown("""
-<div class="navbar">
-    <div class="navbar-title">🎯 Outage RCA Assistant</div>
-    <div style="font-size: 0.88rem; color: #94a3b8;">Home &nbsp;|&nbsp; Incidents &nbsp;|&nbsp; RCA Insights &nbsp;|&nbsp; Knowledge Base</div>
-</div>
-""", unsafe_allow_html=True)
-
-# Hero Section Header
+# Single Integrated Hero Header (No duplicate navigation bar)
 st.markdown("""
 <div class="hero-section">
-    <div class="hero-title">Outage RCA Assistant</div>
-    <div class="hero-subtitle">Investigate incidents. Identify root causes. Resolve faster.</div>
-    <div class="hero-caption">Ask questions about outages, root causes, resolutions, error codes, and lessons learned.</div>
+    <div>
+        <div class="hero-title">🎯 Outage RCA Assistant</div>
+        <div class="hero-subtitle">Investigate incidents • Identify root causes • Resolve faster</div>
+    </div>
+    <div style="font-size: 0.82rem; color: #cbd5e1;">
+        Home &nbsp;|&nbsp; Incidents &nbsp;|&nbsp; RCA Insights &nbsp;|&nbsp; Knowledge Base
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -244,80 +218,71 @@ with m4:
     """, unsafe_allow_html=True)
 
 st.write("")
-st.write("")
 
-# Main Dashboard Content Grid
-col_left, col_right = st.columns([1, 1.3])
+# Main Dashboard Grid
+col_left, col_right = st.columns([1, 1.2])
 
-# Set initial query trigger state
 if "query_trigger" not in st.session_state:
     st.session_state.query_trigger = None
 
 with col_left:
     st.markdown('<div class="section-title">What can I help you with?</div>', unsafe_allow_html=True)
-    
     b1, b2 = st.columns(2)
     with b1:
-        if st.button("🎯 Find Root Cause\nAsk questions to identify causes"):
+        if st.button("🎯 Find Root Cause"):
             st.session_state.query_trigger = "What are the primary root causes across all incidents?"
-        if st.button("⏱️ Check Previous Incidents\nSearch historical outage records"):
+        if st.button("⏱️ Check Incidents"):
             st.session_state.query_trigger = "show me all the incidents"
 
     with b2:
-        if st.button("💻 Analyze Error Code\nGet details for error codes"):
-            st.session_state.query_trigger = "List all incidents with 504 gateway timeout or 502 bad gateway errors"
-        if st.button("🛠️ Recommend Resolution\nGet recommended resolution steps"):
+        if st.button("💻 Analyze Error Code"):
+            st.session_state.query_trigger = "List all incidents with gateway timeout or bad gateway errors"
+        if st.button("🛠️ Recommend Fix"):
             st.session_state.query_trigger = "What are the fixes and resolutions applied for EDMS_RL incidents?"
 
 with col_right:
     st.markdown('<div class="section-title">Recent Incident Insights</div>', unsafe_allow_html=True)
     st.markdown("""
-    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px; font-size:0.85rem;">
+    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:8px; font-size:0.78rem;">
         <table style="width:100%; border-collapse:collapse;">
             <tr style="border-bottom:1px solid #f1f5f9; color:#64748b; font-weight:600;">
-                <td style="padding:8px;">Incident ID</td>
-                <td style="padding:8px;">Project/System</td>
-                <td style="padding:8px;">Status</td>
-                <td style="padding:8px;">RCA Confidence</td>
+                <td style="padding:4px 6px;">Incident ID</td>
+                <td style="padding:4px 6px;">Project/System</td>
+                <td style="padding:4px 6px;">Status</td>
+                <td style="padding:4px 6px;">RCA Confidence</td>
             </tr>
             <tr style="border-bottom:1px solid #f8fafc;">
-                <td style="padding:8px; font-weight:600; color:#2563eb;">INC0178998</td>
-                <td style="padding:8px;">EDMS_RL PROD</td>
-                <td style="padding:8px; color:#16a34a; font-weight:600;">● Resolved</td>
-                <td style="padding:8px; font-weight:600;">98%</td>
+                <td style="padding:4px 6px; font-weight:600; color:#2563eb;">INC0178998</td>
+                <td style="padding:4px 6px;">EDMS_RL PROD</td>
+                <td style="padding:4px 6px; color:#16a34a; font-weight:600;">● Resolved</td>
+                <td style="padding:4px 6px; font-weight:600;">98%</td>
             </tr>
             <tr style="border-bottom:1px solid #f8fafc;">
-                <td style="padding:8px; font-weight:600; color:#2563eb;">INC0176274</td>
-                <td style="padding:8px;">EDMS_RL QA</td>
-                <td style="padding:8px; color:#16a34a; font-weight:600;">● Resolved</td>
-                <td style="padding:8px; font-weight:600;">95%</td>
+                <td style="padding:4px 6px; font-weight:600; color:#2563eb;">INC0176274</td>
+                <td style="padding:4px 6px;">EDMS_RL QA</td>
+                <td style="padding:4px 6px; color:#16a34a; font-weight:600;">● Resolved</td>
+                <td style="padding:4px 6px; font-weight:600;">95%</td>
             </tr>
             <tr>
-                <td style="padding:8px; font-weight:600; color:#2563eb;">INC0191705</td>
-                <td style="padding:8px;">ASK2 PROD</td>
-                <td style="padding:8px; color:#16a34a; font-weight:600;">● Resolved</td>
-                <td style="padding:8px; font-weight:600;">92%</td>
+                <td style="padding:4px 6px; font-weight:600; color:#2563eb;">INC0191705</td>
+                <td style="padding:4px 6px;">ASK2 PROD</td>
+                <td style="padding:4px 6px; color:#16a34a; font-weight:600;">● Resolved</td>
+                <td style="padding:4px 6px; font-weight:600;">92%</td>
             </tr>
         </table>
     </div>
     """, unsafe_allow_html=True)
 
-st.write("")
-st.markdown("---")
+# Chat Assistant Window
+st.markdown('<div class="section-title" style="margin-top:10px;">💬 Ask Assistant</div>', unsafe_allow_html=True)
 
-# Chat Assistant Section
-st.subheader("💬 Ask Assistant")
-
-# Initialize Chat History
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display past chat messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Handle user input from Chat Bar or Quick Action Buttons
 user_prompt = st.chat_input("Ask about an incident, error code, RCA, or resolution...")
 
 if st.session_state.query_trigger:
@@ -336,10 +301,10 @@ if user_prompt:
 
     st.session_state.messages.append({"role": "assistant", "content": full_response})
 
-# Footer Bar
+# Fixed Bottom Footer
 st.markdown("""
 <div class="footer">
-    <div>🛡️ Secure • Trusted • Always On | Your operations, our priority.</div>
-    <div>© 2026 Outage RCA Assistant. All rights reserved. | Version 1.0.0</div>
+    <div>🛡️ Secure • Trusted • Always On</div>
+    <div>© 2026 Outage RCA Assistant | v1.0.0</div>
 </div>
 """, unsafe_allow_html=True)
