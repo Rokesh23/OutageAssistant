@@ -4,24 +4,24 @@ from llm import ask_llm
 
 st.set_page_config(
     page_title="Outage RCA Assistant",
-    page_icon="🎯",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS to eliminate double headers, center header text, and fit on single screen
+# Custom CSS matching the Dark Blue Header Banner + Light Body UI
 custom_ui_style = """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
     html, body, [data-testid="stAppViewContainer"] {
         font-family: 'Inter', sans-serif;
-        background-color: #f4f6f9 !important;
-        color: #1e293b;
-        overflow: hidden !important; /* Prevents whole page scrolling */
+        background-color: #f8fafc !important; /* Clean light background for body */
+        color: #0f172a;
+        overflow: hidden !important; /* Fits everything without page scrolling */
     }
 
-    /* Hide default Streamlit headers, menus, and footers */
+    /* Hide Streamlit default headers, footers, and chrome elements */
     header[data-testid="stHeader"] { visibility: hidden; height: 0%; }
     #MainMenu { visibility: hidden; }
     footer { visibility: hidden; display: none !important; }
@@ -30,61 +30,81 @@ custom_ui_style = """
     button[data-testid="baseButton-header"] { display: none; }
     div[data-testid="stStatusWidget"] { visibility: hidden; }
 
-    /* Single Centered Compact Hero Section */
-    .hero-section {
-        background: linear-gradient(135deg, #0b132b 0%, #1c2541 60%, #3a506b 100%);
-        color: white;
-        padding: 16px 30px;
+    /* Dark Blue Header Banner (Top Section Only) */
+    .hero-header-banner {
+        background: linear-gradient(135deg, #090d16 0%, #0f172a 40%, #1e293b 100%);
+        color: #ffffff;
+        padding: 24px 40px 20px 40px;
         margin-top: -60px;
         margin-left: -5rem;
         margin-right: -5rem;
-        border-bottom: 1px solid #3a506b;
-        text-align: center; /* Center-aligns all content */
+        margin-bottom: 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
         position: relative;
     }
-    .hero-title {
-        font-size: 1.6rem;
-        font-weight: 700;
-        margin-bottom: 4px;
-    }
-    .hero-subtitle {
-        color: #cbd5e1;
-        font-size: 0.88rem;
+
+    .header-top-nav {
+        position: absolute;
+        top: 18px;
+        left: 40px;
+        right: 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
-    /* Top-Right Home Link */
-    .home-link-container {
-        position: absolute;
-        right: 30px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 0.85rem;
+    .brand-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
+
     .nav-link {
-        color: #cbd5e1 !important;
+        color: #94a3b8 !important;
         text-decoration: none !important;
+        font-size: 0.85rem;
         font-weight: 500;
         transition: color 0.2s ease;
     }
-    .nav-link:hover {
+    .nav-link:hover, .nav-link.active {
         color: #ffffff !important;
-        text-decoration: underline !important;
     }
 
-    /* Compact Metric Cards */
+    .hero-main-title {
+        font-size: 2.1rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        background: linear-gradient(90deg, #60a5fa 0%, #38bdf8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-top: 10px;
+        margin-bottom: 4px;
+    }
+
+    .hero-main-subtitle {
+        color: #cbd5e1;
+        font-size: 0.92rem;
+        font-weight: 400;
+    }
+
+    /* Metric Cards (Light Section) */
     .metric-card {
         background: #ffffff;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
+        border-radius: 10px;
         padding: 10px 14px;
         display: flex;
         align-items: center;
         gap: 12px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
     .metric-icon {
-        width: 36px;
-        height: 36px;
+        width: 38px;
+        height: 38px;
         border-radius: 8px;
         display: flex;
         align-items: center;
@@ -92,7 +112,7 @@ custom_ui_style = """
         font-size: 1.1rem;
     }
     .metric-value {
-        font-size: 1.2rem;
+        font-size: 1.25rem;
         font-weight: 700;
         color: #0f172a;
         line-height: 1.1;
@@ -107,11 +127,11 @@ custom_ui_style = """
         color: #10b981;
     }
 
-    /* Action Tile Buttons */
+    /* Action Buttons */
     .stButton>button {
         width: 100%;
         background-color: #ffffff;
-        color: #1e293b;
+        color: #0f172a;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         padding: 8px 12px;
@@ -120,23 +140,24 @@ custom_ui_style = """
         text-align: left;
         transition: all 0.2s ease;
         margin-bottom: -10px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     }
     .stButton>button:hover {
-        background-color: #eff6ff;
-        border-color: #3b82f6;
-        color: #2563eb;
+        background-color: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #0284c7;
     }
 
     .section-title {
-        font-size: 0.9rem;
+        font-size: 0.88rem;
         font-weight: 700;
         color: #0f172a;
         margin-bottom: 8px;
     }
 
-    /* Chat Container Internal Scroll */
+    /* Chat Area Scrollable Box */
     div[data-testid="stChatMessageContainer"] {
-        max-height: 280px !important;
+        max-height: 260px !important;
         overflow-y: auto !important;
         padding-right: 5px;
     }
@@ -146,15 +167,15 @@ custom_ui_style = """
         border: 1px solid #e2e8f0 !important;
         border-radius: 8px !important;
         padding: 10px !important;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.02) !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
         font-size: 0.88rem;
     }
 
     /* Footer */
     .footer {
-        background-color: #0b132b;
+        background-color: #090d16;
         color: #64748b;
-        padding: 6px 30px;
+        padding: 6px 40px;
         margin-left: -5rem;
         margin-right: -5rem;
         position: fixed;
@@ -164,27 +185,27 @@ custom_ui_style = """
         justify-content: space-between;
         align-items: center;
         font-size: 0.75rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
     </style>
 """
 st.markdown(custom_ui_style, unsafe_allow_html=True)
 
-# Centered Hero Header
+# Dark Blue Header Banner (Centered Title + Top Nav Bar)
 st.markdown("""
-<div class="hero-section">
-    <div>
-        <div class="hero-title">🎯 Outage RCA Assistant</div>
-        <div class="hero-subtitle">Investigate incidents • Identify root causes • Resolve faster</div>
+<div class="hero-header-banner">
+    <div class="header-top-nav">
+        <div class="brand-title">⚙️ Outage RCA Assistant</div>
+        <div>
+            <a href="?" target="_self" class="nav-link active">Home</a>
+        </div>
     </div>
-    <div class="home-link-container">
-        <a href="?" target="_self" class="nav-link">Home</a>
-    </div>
+    <div class="hero-main-title">Outage RCA Assistant</div>
+    <div class="hero-main-subtitle">Investigate incidents. Identify root causes. Resolve faster.</div>
 </div>
 """, unsafe_allow_html=True)
 
-st.write("")
-
-# Metrics Overview Banner
+# Metrics Overview Cards (In Light Background)
 m1, m2, m3, m4 = st.columns(4)
 
 with m1:
@@ -230,7 +251,7 @@ with m4:
         <div>
             <div class="metric-label">Resolution Playbooks</div>
             <div class="metric-value">14</div>
-            <div class="metric-subtext">Step-by-step fixes</div>
+            <div class="metric-subtext">Step-by-step guides</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -247,7 +268,7 @@ with col_left:
     st.markdown('<div class="section-title">What can I help you with?</div>', unsafe_allow_html=True)
     b1, b2 = st.columns(2)
     with b1:
-        if st.button("🎯 Find Root Cause"):
+        if st.button("🔍 Find Root Cause"):
             st.session_state.query_trigger = "What are the primary root causes across all incidents?"
         if st.button("⏱️ Check Incidents"):
             st.session_state.query_trigger = "show me all the incidents"
@@ -291,7 +312,7 @@ with col_right:
     </div>
     """, unsafe_allow_html=True)
 
-# Chat Assistant Window
+# Chat Assistant Box
 st.markdown('<div class="section-title" style="margin-top:10px;">💬 Ask Assistant</div>', unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
@@ -319,7 +340,7 @@ if user_prompt:
 
     st.session_state.messages.append({"role": "assistant", "content": full_response})
 
-# Fixed Bottom Footer
+# Footer Section
 st.markdown("""
 <div class="footer">
     <div>🛡️ Secure • Trusted • Always On</div>
