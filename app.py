@@ -24,15 +24,6 @@ with st.sidebar:
     st.success("FAISS Connected")
     st.success("Groq API Ready")
 
-    st.markdown("---")
-    st.markdown("### 💡 Example Questions")
-    st.markdown("- `What caused INC0176274?`")
-    st.markdown("- `Show total incidents`")
-    st.markdown("- `Resolution for INC0191705`")
-    st.markdown("- `show me incidents related to gateway timeout error`")
-    st.markdown("- `show me all the incidents`")
-    st.markdown("- `show me all RCA documents`")
-
 # Main Interface Header
 st.title("🤖 Outage RCA Assistant")
 st.caption("Ask questions about outages, root causes, resolutions and lessons learned.")
@@ -52,11 +43,9 @@ if prompt := st.chat_input("Ask a question about incidents, RCAs, or error codes
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("assistant"):
-        # Retrieve context using custom hybrid search
-        context_str, matched_results, confidence = retrieve(prompt)
-
-        # Stream response from LLM
-        response_generator = ask_llm(prompt, context_str)
-        full_response = st.write_stream(response_generator)
+        with st.spinner("Analyzing RCA Documents..."):
+            context_str, matched_results, confidence = retrieve(prompt)
+            full_response = ask_llm(prompt, context_str)
+            st.markdown(full_response)
 
     st.session_state.messages.append({"role": "assistant", "content": full_response})
