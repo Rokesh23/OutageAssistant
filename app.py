@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS matching the Dark Blue Header Banner + Light Body UI
+# Custom CSS matching Starry Header Banner + Light Body UI
 custom_ui_style = """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -30,9 +30,25 @@ custom_ui_style = """
     button[data-testid="baseButton-header"] { display: none; }
     div[data-testid="stStatusWidget"] { visibility: hidden; }
 
-    /* Dark Blue Header Banner (Top Section Only) */
+    /* Starry Dark Blue Header Banner */
     .hero-header-banner {
-        background: linear-gradient(135deg, #090d16 0%, #0f172a 40%, #1e293b 100%);
+        background: 
+            radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(1px 1px at 40px 70px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(1px 1px at 80px 10px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(1.5px 1.5px at 150px 80px, #cbd5e1, rgba(0,0,0,0)),
+            radial-gradient(1px 1px at 200px 20px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(1.5px 1.5px at 300px 50px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(1px 1px at 420px 90px, #cbd5e1, rgba(0,0,0,0)),
+            radial-gradient(1.5px 1.5px at 550px 30px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(1px 1px at 650px 70px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(1px 1px at 780px 15px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(1.5px 1.5px at 900px 85px, #cbd5e1, rgba(0,0,0,0)),
+            radial-gradient(1px 1px at 1020px 40px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(1.5px 1.5px at 1150px 65px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(1px 1px at 1280px 25px, #cbd5e1, rgba(0,0,0,0)),
+            radial-gradient(1.5px 1.5px at 1400px 75px, #ffffff, rgba(0,0,0,0)),
+            linear-gradient(135deg, #050a14 0%, #0c1427 45%, #182238 100%);
         color: #ffffff;
         padding: 24px 40px 20px 40px;
         margin-top: -60px;
@@ -47,20 +63,9 @@ custom_ui_style = """
     .header-top-nav {
         position: absolute;
         top: 18px;
-        left: 40px;
         right: 40px;
         display: flex;
-        justify-content: space-between;
         align-items: center;
-    }
-
-    .brand-title {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #ffffff;
-        display: flex;
-        align-items: center;
-        gap: 8px;
     }
 
     .nav-link {
@@ -173,7 +178,7 @@ custom_ui_style = """
 
     /* Footer */
     .footer {
-        background-color: #090d16;
+        background-color: #050a14;
         color: #64748b;
         padding: 6px 40px;
         margin-left: -5rem;
@@ -191,14 +196,11 @@ custom_ui_style = """
 """
 st.markdown(custom_ui_style, unsafe_allow_html=True)
 
-# Dark Blue Header Banner (Centered Title + Top Nav Bar)
+# Starry Header Banner (Centered Title + Top Right Home Link)
 st.markdown("""
 <div class="hero-header-banner">
     <div class="header-top-nav">
-        <div class="brand-title">⚙️ Outage RCA Assistant</div>
-        <div>
-            <a href="?" target="_self" class="nav-link active">Home</a>
-        </div>
+        <a href="?" target="_self" class="nav-link active">Home</a>
     </div>
     <div class="hero-main-title">Outage RCA Assistant</div>
     <div class="hero-main-subtitle">Investigate incidents. Identify root causes. Resolve faster.</div>
