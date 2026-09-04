@@ -9,26 +9,36 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS matching Starry Header Banner + Light Body UI
+# Custom CSS matching Starry Header + Light Body UI + Hidden Host Toolbars
 custom_ui_style = """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
     html, body, [data-testid="stAppViewContainer"] {
         font-family: 'Inter', sans-serif;
-        background-color: #f8fafc !important; /* Clean light background for body */
+        background-color: #f8fafc !important; /* Clean light background */
         color: #0f172a;
-        overflow: hidden !important; /* Fits everything without page scrolling */
+        overflow: hidden !important;
     }
 
-    /* Hide Streamlit default headers, footers, and chrome elements */
-    header[data-testid="stHeader"] { visibility: hidden; height: 0%; }
-    #MainMenu { visibility: hidden; }
+    /* Hide Streamlit default headers, footers, menus, and chrome elements */
+    header[data-testid="stHeader"] { visibility: hidden; height: 0%; display: none !important; }
+    #MainMenu { visibility: hidden; display: none !important; }
     footer { visibility: hidden; display: none !important; }
-    div[data-testid="stToolbar"] { visibility: hidden; }
-    section[data-testid="stSidebar"] { display: none; }
-    button[data-testid="baseButton-header"] { display: none; }
-    div[data-testid="stStatusWidget"] { visibility: hidden; }
+    div[data-testid="stToolbar"] { visibility: hidden; display: none !important; }
+    section[data-testid="stSidebar"] { display: none !important; }
+    button[data-testid="baseButton-header"] { display: none !important; }
+    div[data-testid="stStatusWidget"] { visibility: hidden; display: none !important; }
+
+    /* Hide Bottom Right Streamlit Cloud Floating Toolbars & Badges */
+    div[data-testid="stAppToolbar"], 
+    .stAppToolbar, 
+    .viewerBadge_container__1QSob,
+    [data-testid="manage-app-button"],
+    button[title="View app source"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
 
     /* Starry Dark Blue Header Banner */
     .hero-header-banner {
@@ -96,7 +106,7 @@ custom_ui_style = """
         font-weight: 400;
     }
 
-    /* Metric Cards (Light Section) */
+    /* Metric Cards */
     .metric-card {
         background: #ffffff;
         border: 1px solid #e2e8f0;
@@ -203,11 +213,11 @@ st.markdown("""
         <a href="?" target="_self" class="nav-link active">Home</a>
     </div>
     <div class="hero-main-title">Outage RCA Assistant</div>
-    <div class="hero-main-subtitle">Investigate incidents. Identify root causes. Resolve faster.</div>
+    <div class="hero-main-subtitle">Investigate incidents • Identify root causes • Resolve faster</div>
 </div>
 """, unsafe_allow_html=True)
 
-# Metrics Overview Cards (In Light Background)
+# Metrics Overview Cards
 m1, m2, m3, m4 = st.columns(4)
 
 with m1:
