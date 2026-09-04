@@ -53,6 +53,18 @@ custom_ui_style = """
         font-size: 0.85rem;
     }
 
+    /* Header Nav Links */
+    .nav-link {
+        color: #cbd5e1 !important;
+        text-decoration: none !important;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+    .nav-link:hover {
+        color: #ffffff !important;
+        text-decoration: underline !important;
+    }
+
     /* Compact Metric Cards */
     .metric-card {
         background: #ffffff;
@@ -151,7 +163,7 @@ custom_ui_style = """
 """
 st.markdown(custom_ui_style, unsafe_allow_html=True)
 
-# Single Integrated Hero Header (No duplicate navigation bar)
+# Single Integrated Hero Header with Clickable Navigation Links
 st.markdown("""
 <div class="hero-section">
     <div>
@@ -159,12 +171,33 @@ st.markdown("""
         <div class="hero-subtitle">Investigate incidents • Identify root causes • Resolve faster</div>
     </div>
     <div style="font-size: 0.82rem; color: #cbd5e1;">
-        Home &nbsp;|&nbsp; Incidents &nbsp;|&nbsp; RCA Insights &nbsp;|&nbsp; Knowledge Base
+        <a href="?nav=home" target="_self" class="nav-link">Home</a> &nbsp;|&nbsp;
+        <a href="?nav=incidents" target="_self" class="nav-link">Incidents</a> &nbsp;|&nbsp;
+        <a href="?nav=insights" target="_self" class="nav-link">RCA Insights</a> &nbsp;|&nbsp;
+        <a href="?nav=kb" target="_self" class="nav-link">Knowledge Base</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
 st.write("")
+
+# Query Parameter Handler for Header Navigation Links
+query_params = st.query_params
+selected_nav = query_params.get("nav", "home")
+
+# Handle quick navigation actions triggered from header links
+if "nav_triggered" not in st.session_state:
+    st.session_state.nav_triggered = None
+
+if selected_nav == "incidents" and st.session_state.nav_triggered != "incidents":
+    st.session_state.query_trigger = "show me all the incidents"
+    st.session_state.nav_triggered = "incidents"
+elif selected_nav == "insights" and st.session_state.nav_triggered != "insights":
+    st.session_state.query_trigger = "What are the primary root causes across all incidents?"
+    st.session_state.nav_triggered = "insights"
+elif selected_nav == "kb" and st.session_state.nav_triggered != "kb":
+    st.session_state.query_trigger = "What are the common resolution playbooks and error codes documented?"
+    st.session_state.nav_triggered = "kb"
 
 # Metrics Overview Banner
 m1, m2, m3, m4 = st.columns(4)
