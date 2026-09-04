@@ -5,24 +5,44 @@ from llm import ask_llm
 st.set_page_config(
     page_title="Outage RCA Assistant",
     page_icon="🤖",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
-# Sidebar UI
-with st.sidebar:
-    st.title("🤖 Outage Assistant")
-    st.subheader("AI Powered RCA Knowledge Assistant")
-    
-    st.markdown("---")
-    st.markdown("### 📊 Knowledge Base")
-    st.markdown("📄 **Documents**: 16")
-    st.markdown("📑 **Sections**: 81")
-    st.markdown("🚨 **Incidents**: 14")
-    
-    st.markdown("---")
-    st.markdown("### 🟢 Status")
-    st.success("FAISS Connected")
-    st.success("Groq API Ready")
+# Custom CSS to hide top header, toolbar (Share, Edit, GitHub), menu, footer, and Streamlit Cloud buttons
+hide_streamlit_style = """
+    <style>
+    /* Hide the top header bar and toolbar options (Share, Star, Edit, GitHub, Menu) */
+    header[data-testid="stHeader"] {
+        visibility: hidden;
+        height: 0%;
+    }
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    div[data-testid="stToolbar"] {visibility: hidden;}
+
+    /* Hide sidebar collapse button */
+    section[data-testid="stSidebar"] {
+        display: none;
+    }
+    button[data-testid="baseButton-header"] {
+        display: none;
+    }
+
+    /* Hide bottom-right Streamlit Cloud management button */
+    div[data-testid="stStatusWidget"] {
+        visibility: hidden;
+    }
+    .viewerBadge_container__1QS3n {
+        display: none !important;
+    }
+    button[title="View app in Streamlit Cloud"] {
+        display: none !important;
+    }
+    footer {display: none !important;}
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Main Interface Header
 st.title("🤖 Outage RCA Assistant")
