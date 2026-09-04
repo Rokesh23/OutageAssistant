@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS to eliminate double headers, tighten margins, and remove page-level scrolling
+# Custom CSS to eliminate double headers, center header text, and fit on single screen
 custom_ui_style = """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -30,7 +30,7 @@ custom_ui_style = """
     button[data-testid="baseButton-header"] { display: none; }
     div[data-testid="stStatusWidget"] { visibility: hidden; }
 
-    /* Single Compact Hero Section */
+    /* Single Centered Compact Hero Section */
     .hero-section {
         background: linear-gradient(135deg, #0b132b 0%, #1c2541 60%, #3a506b 100%);
         color: white;
@@ -39,21 +39,27 @@ custom_ui_style = """
         margin-left: -5rem;
         margin-right: -5rem;
         border-bottom: 1px solid #3a506b;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        text-align: center; /* Center-aligns all content */
+        position: relative;
     }
     .hero-title {
-        font-size: 1.5rem;
+        font-size: 1.6rem;
         font-weight: 700;
-        margin-bottom: 2px;
+        margin-bottom: 4px;
     }
     .hero-subtitle {
         color: #cbd5e1;
-        font-size: 0.85rem;
+        font-size: 0.88rem;
     }
 
-    /* Header Nav Links */
+    /* Top-Right Home Link */
+    .home-link-container {
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.85rem;
+    }
     .nav-link {
         color: #cbd5e1 !important;
         text-decoration: none !important;
@@ -163,14 +169,14 @@ custom_ui_style = """
 """
 st.markdown(custom_ui_style, unsafe_allow_html=True)
 
-# Single Hero Header keeping only 'Home'
+# Centered Hero Header
 st.markdown("""
 <div class="hero-section">
     <div>
         <div class="hero-title">🎯 Outage RCA Assistant</div>
         <div class="hero-subtitle">Investigate incidents • Identify root causes • Resolve faster</div>
     </div>
-    <div style="font-size: 0.85rem; color: #cbd5e1;">
+    <div class="home-link-container">
         <a href="?" target="_self" class="nav-link">Home</a>
     </div>
 </div>
