@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 from rag import retrieve
 from llm import ask_llm
 
@@ -10,12 +9,12 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom UI Styling (Slate Dark Theme + Unified Input Bar)
+# Custom UI Styling (Slate Dark Theme + Sticky Bottom Chat Box)
 custom_ui_style = """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    /* Slate Dark Background for Main Viewport */
+    /* Slate Dark Background */
     html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"], .stApp {
         font-family: 'Inter', sans-serif;
         background-color: #0b1329 !important;
@@ -96,35 +95,7 @@ custom_ui_style = """
         margin-bottom: 20px;
     }
 
-    /* Style for Dark Input Field */
-    div[data-testid="stTextInput"] input {
-        background-color: #1e293b !important;
-        color: #f8fafc !important;
-        border: 1px solid #334155 !important;
-        border-radius: 8px !important;
-        padding: 10px 14px !important;
-        font-size: 0.9rem !important;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
-    }
-    div[data-testid="stTextInput"] input::placeholder {
-        color: #94a3b8 !important;
-    }
-
-    /* Style for Dark File Uploader Box */
-    div[data-testid="stFileUploader"] {
-        margin-top: 0px !important;
-    }
-    
-    div[data-testid="stFileUploader"] section {
-        padding: 4px 8px !important;
-        background-color: #1e293b !important;
-        border: 1px dashed #38bdf8 !important;
-        border-radius: 8px !important;
-        min-height: 42px !important;
-        color: #f8fafc !important;
-    }
-
-    /* Metric Cards in Dark Mode */
+    /* Metric Cards */
     .metric-card {
         background: #1e293b;
         border: 1px solid #334155;
@@ -160,7 +131,7 @@ custom_ui_style = """
         color: #34d399;
     }
 
-    /* Quick Action Buttons in Dark Mode */
+    /* Quick Action Buttons */
     .stButton>button {
         width: 100%;
         background-color: #1e293b;
@@ -187,7 +158,7 @@ custom_ui_style = """
         margin-bottom: 10px;
     }
 
-    /* Chat Container styling for Dark Mode */
+    /* Style for standard chat messages */
     div[data-testid="stChatMessage"] {
         background: #1e293b !important;
         border: 1px solid #334155 !important;
@@ -199,7 +170,24 @@ custom_ui_style = """
         margin-bottom: 12px;
     }
 
-    /* Dark Footer */
+    /* Style and medium sizing for bottom chat input */
+    div[data-testid="stChatInput"] {
+        max-width: 750px !important;
+        margin: 0 auto !important;
+        padding-bottom: 15px !important;
+    }
+
+    div[data-testid="stChatInput"] > div {
+        background-color: #1e293b !important;
+        border: 1px solid #334155 !important;
+        border-radius: 10px !important;
+    }
+
+    div[data-testid="stChatInput"] textarea {
+        color: #f8fafc !important;
+    }
+
+    /* Footer */
     .footer {
         background-color: #030712;
         color: #64748b;
@@ -207,6 +195,7 @@ custom_ui_style = """
         margin-left: -5rem;
         margin-right: -5rem;
         margin-top: 40px;
+        margin-bottom: 60px;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -217,9 +206,11 @@ custom_ui_style = """
 """
 st.markdown(custom_ui_style, unsafe_allow_html=True)
 
-# Session state initialization
-if "search_query" not in st.session_state:
-    st.session_state.search_query = ""
+# Session state initialization for chat history and active query
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "preset_prompt" not in st.session_state:
+    st.session_state.preset_prompt = None
 
 # Header Banner
 st.markdown("""
@@ -231,40 +222,6 @@ st.markdown("""
     <div class="hero-main-subtitle">Investigate incidents • Identify root causes • Resolve faster</div>
 </div>
 """, unsafe_allow_html=True)
-
-# Combined Input Row: Text Input + Upload Button side by side
-col_input, col_upload = st.columns([0.72, 0.28])
-
-with col_input:
-    user_input = st.text_input(
-        "", 
-        value=st.session_state.search_query,
-        placeholder="🔍 Ask about an incident, error code, RCA, or resolution...",
-        label_visibility="collapsed",
-        key="main_search_input"
-    )
-
-with col_upload:
-    uploaded_file = st.file_uploader(
-        "Upload Attachment",
-        type=["csv", "xlsx"],
-        help="Upload .csv or .xlsx logs to analyze",
-        label_visibility="collapsed"
-    )
-
-# Banner Feedback for Attached File
-parsed_file_data = None
-if uploaded_file is not None:
-    try:
-        if uploaded_file.name.endswith('.csv'):
-            parsed_file_data = pd.read_csv(uploaded_file)
-        else:
-            parsed_file_data = pd.read_excel(uploaded_file)
-        st.info(f"📁 Attached **{uploaded_file.name}** ({len(parsed_file_data)} records loaded)")
-    except Exception as err:
-        st.error(f"Error parsing file: {err}")
-
-st.write("")
 
 # Metrics Overview Cards
 m1, m2, m3, m4 = st.columns(4)
@@ -327,18 +284,18 @@ with col_left:
     b1, b2 = st.columns(2)
     with b1:
         if st.button("🔍 Find Root Cause"):
-            st.session_state.search_query = "What are the primary root causes across all incidents?"
+            st.session_state.preset_prompt = "What are the primary root causes across all incidents?"
             st.rerun()
         if st.button("⏱️ Check Incidents"):
-            st.session_state.search_query = "show me all the incidents"
+            st.session_state.preset_prompt = "show me all the incidents"
             st.rerun()
 
     with b2:
         if st.button("💻 Analyze Error Code"):
-            st.session_state.search_query = "List all incidents with gateway timeout or bad gateway errors"
+            st.session_state.preset_prompt = "List all incidents with gateway timeout or bad gateway errors"
             st.rerun()
         if st.button("🛠️ Recommend Fix"):
-            st.session_state.search_query = "What are the fixes and resolutions applied for EDMS_RL incidents?"
+            st.session_state.preset_prompt = "What are the fixes and resolutions applied for EDMS_RL incidents?"
             st.rerun()
 
 with col_right:
@@ -374,22 +331,32 @@ with col_right:
     </div>
     """, unsafe_allow_html=True)
 
-# Processing Search Query and File Attachment Data
-if user_input:
-    st.write("")
-    st.markdown('<div class="section-title">Analysis Result</div>', unsafe_allow_html=True)
-    
-    # Enrich user prompt with uploaded file context if available
-    final_query = user_input
-    if parsed_file_data is not None:
-        file_preview_str = parsed_file_data.head(15).to_string()
-        final_query = f"{user_input}\n\n[Attached File Content Preview]:\n{file_preview_str}"
+st.write("")
 
-    with st.spinner("Analyzing RCA Documents & Attachment..."):
-        context_str, matched_results, confidence = retrieve(final_query)
-        full_response = ask_llm(final_query, context_str)
-        with st.chat_message("assistant"):
+# Display previous conversation thread
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+# Handle preset prompt from action buttons
+user_input = st.chat_input("Ask about an incident, error code, RCA, or resolution...")
+
+if st.session_state.preset_prompt:
+    user_input = st.session_state.preset_prompt
+    st.session_state.preset_prompt = None
+
+# Process User Input
+if user_input:
+    st.chat_message("user").markdown(user_input)
+    st.session_state.messages.append({"role": "user", "content": user_input})
+
+    with st.chat_message("assistant"):
+        with st.spinner("Analyzing RCA Documents..."):
+            context_str, matched_results, confidence = retrieve(user_input)
+            full_response = ask_llm(user_input, context_str)
             st.markdown(full_response)
+
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
 
 # Footer
 st.markdown("""
