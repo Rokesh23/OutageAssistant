@@ -9,26 +9,87 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Dark Theme CSS applied to existing elements without changing layout
+# Custom Dark Theme CSS with fixed layout & zero page overflow
 custom_ui_style = """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    /* Dark Background for Page */
+    /* Global Viewport & Dark Background */
     html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"], .stApp {
         font-family: 'Inter', sans-serif;
         background-color: #0b1329 !important;
         color: #f1f5f9 !important;
+        overflow-x: hidden !important;
     }
 
-    /* Hide default Streamlit elements */
-    header[data-testid="stHeader"] { visibility: hidden; height: 0%; display: none !important; }
+    /* Remove main block container extra top padding to prevent overflow */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 5rem !important;
+        max-width: 100% !important;
+    }
+
+    /* Hide Streamlit default UI elements */
+    header[data-testid="stHeader"] { visibility: hidden; height: 0px !important; display: none !important; }
     #MainMenu { visibility: hidden; display: none !important; }
     footer { visibility: hidden; display: none !important; }
     div[data-testid="stToolbar"] { visibility: hidden; display: none !important; }
     section[data-testid="stSidebar"] { display: none !important; }
 
-    /* Dark Metric Cards */
+    /* Clean Hero Header Banner without negative margin breaks */
+    .hero-header-banner {
+        background: 
+            radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(1px 1px at 80px 10px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(1.5px 1.5px at 300px 50px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(1.5px 1.5px at 900px 85px, #cbd5e1, rgba(0,0,0,0)),
+            linear-gradient(135deg, #030712 0%, #0b1329 50%, #1e293b 100%);
+        color: #ffffff;
+        padding: 20px 20px 25px 20px;
+        margin-top: -20px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        text-align: center;
+        position: relative;
+    }
+
+    .header-top-nav {
+        position: absolute;
+        top: 15px;
+        right: 25px;
+        display: flex;
+        align-items: center;
+    }
+
+    .nav-link {
+        color: #94a3b8 !important;
+        text-decoration: none !important;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    .nav-link.active {
+        color: #ffffff !important;
+    }
+
+    .hero-main-title {
+        font-size: 2.1rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        background: linear-gradient(90deg, #38bdf8 0%, #818cf8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-top: 5px;
+        margin-bottom: 4px;
+    }
+
+    .hero-main-subtitle {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        font-weight: 400;
+    }
+
+    /* Metric Cards Styling */
     .metric-card {
         background: #1e293b !important;
         border: 1px solid #334155 !important;
@@ -51,7 +112,7 @@ custom_ui_style = """
         font-weight: 500;
     }
 
-    /* Dark Action Buttons */
+    /* Action Buttons Styling */
     .stButton>button {
         width: 100%;
         background-color: #1e293b !important;
@@ -77,7 +138,7 @@ custom_ui_style = """
         margin-bottom: 10px;
     }
 
-    /* Dark Incident Table Box */
+    /* Incident Table Styling */
     .incident-table-container {
         background: #1e293b !important;
         border: 1px solid #334155 !important;
@@ -86,11 +147,8 @@ custom_ui_style = """
         font-size: 0.78rem;
         color: #f8fafc !important;
     }
-    .incident-table-container table tr {
-        border-bottom: 1px solid #334155 !important;
-    }
 
-    /* Dark Chat Message Styling */
+    /* Chat Messages Styling */
     div[data-testid="stChatMessage"] {
         background: #1e293b !important;
         border: 1px solid #334155 !important;
@@ -98,7 +156,7 @@ custom_ui_style = """
         color: #f8fafc !important;
     }
 
-    /* Dark Input Bar at Bottom */
+    /* Native Bottom Chat Input Box Dark Theme */
     div[data-testid="stChatInput"] > div {
         background-color: #1e293b !important;
         border: 1px solid #334155 !important;
@@ -117,7 +175,7 @@ if "messages" not in st.session_state:
 if "preset_prompt" not in st.session_state:
     st.session_state.preset_prompt = None
 
-# Banner Header
+# Header Banner
 st.markdown("""
 <div class="hero-header-banner">
     <div class="header-top-nav">
@@ -138,7 +196,7 @@ with m1:
         <div>
             <div class="metric-label">Incidents Analyzed</div>
             <div class="metric-value">14</div>
-            <div class="metric-subtext">↑ 100% indexed in system</div>
+            <div class="metric-subtext" style="font-size:0.68rem; color:#34d399;">↑ 100% indexed in system</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -150,7 +208,7 @@ with m2:
         <div>
             <div class="metric-label">RCA Knowledge</div>
             <div class="metric-value">16</div>
-            <div class="metric-subtext">Articles & known causes</div>
+            <div class="metric-subtext" style="font-size:0.68rem; color:#34d399;">Articles & known causes</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -162,7 +220,7 @@ with m3:
         <div>
             <div class="metric-label">Common Error Codes</div>
             <div class="metric-value">81</div>
-            <div class="metric-subtext">Mapped & documented</div>
+            <div class="metric-subtext" style="font-size:0.68rem; color:#34d399;">Mapped & documented</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -174,14 +232,14 @@ with m4:
         <div>
             <div class="metric-label">Resolution Playbooks</div>
             <div class="metric-value">14</div>
-            <div class="metric-subtext">Step-by-step guides</div>
+            <div class="metric-subtext" style="font-size:0.68rem; color:#34d399;">Step-by-step guides</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
 st.write("")
 
-# Action Buttons and Recent Incident Insights
+# Action Buttons and Recent Incident Insights Grid
 col_left, col_right = st.columns([1, 1.2])
 
 with col_left:
@@ -208,19 +266,19 @@ with col_right:
     st.markdown("""
     <div class="incident-table-container">
         <table style="width:100%; border-collapse:collapse;">
-            <tr style="color:#94a3b8; font-weight:600;">
+            <tr style="border-bottom:1px solid #334155; color:#94a3b8; font-weight:600;">
                 <td style="padding:6px;">Incident ID</td>
                 <td style="padding:6px;">Project/System</td>
                 <td style="padding:6px;">Status</td>
                 <td style="padding:6px;">RCA Confidence</td>
             </tr>
-            <tr>
+            <tr style="border-bottom:1px solid #0f172a;">
                 <td style="padding:6px; font-weight:600; color:#38bdf8;">INC0178998</td>
                 <td style="padding:6px;">EDMS_RL PROD</td>
                 <td style="padding:6px; color:#34d399; font-weight:600;">● Resolved</td>
                 <td style="padding:6px; font-weight:600;">98%</td>
             </tr>
-            <tr>
+            <tr style="border-bottom:1px solid #0f172a;">
                 <td style="padding:6px; font-weight:600; color:#38bdf8;">INC0176274</td>
                 <td style="padding:6px;">EDMS_RL QA</td>
                 <td style="padding:6px; color:#34d399; font-weight:600;">● Resolved</td>
@@ -238,12 +296,12 @@ with col_right:
 
 st.write("")
 
-# Display messages thread above the chat input
+# Render message history
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# Bottom sticky chat input (matches original screen element placement)
+# Bottom Fixed Input Box
 user_input = st.chat_input("Ask about an incident, error code, RCA, or resolution...")
 
 if st.session_state.preset_prompt:
