@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom Dark Theme CSS with fixed layout & zero page overflow
+# Custom Dark Theme CSS with High-Contrast White Text for Chat Output
 custom_ui_style = """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -18,11 +18,11 @@ custom_ui_style = """
     html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"], .stApp {
         font-family: 'Inter', sans-serif;
         background-color: #0b1329 !important;
-        color: #f1f5f9 !important;
+        color: #ffffff !important;
         overflow-x: hidden !important;
     }
 
-    /* Remove main block container extra top padding to prevent overflow */
+    /* Container padding */
     .block-container {
         padding-top: 1rem !important;
         padding-bottom: 5rem !important;
@@ -36,7 +36,7 @@ custom_ui_style = """
     div[data-testid="stToolbar"] { visibility: hidden; display: none !important; }
     section[data-testid="stSidebar"] { display: none !important; }
 
-    /* Clean Hero Header Banner without negative margin breaks */
+    /* Header Banner */
     .hero-header-banner {
         background: 
             radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
@@ -103,12 +103,12 @@ custom_ui_style = """
     .metric-value {
         font-size: 1.3rem;
         font-weight: 700;
-        color: #f8fafc !important;
+        color: #ffffff !important;
         line-height: 1.1;
     }
     .metric-label {
         font-size: 0.76rem;
-        color: #94a3b8 !important;
+        color: #cbd5e1 !important;
         font-weight: 500;
     }
 
@@ -116,7 +116,7 @@ custom_ui_style = """
     .stButton>button {
         width: 100%;
         background-color: #1e293b !important;
-        color: #f8fafc !important;
+        color: #ffffff !important;
         border: 1px solid #334155 !important;
         border-radius: 8px;
         padding: 10px 14px;
@@ -134,7 +134,7 @@ custom_ui_style = """
     .section-title {
         font-size: 0.9rem;
         font-weight: 700;
-        color: #f8fafc !important;
+        color: #ffffff !important;
         margin-bottom: 10px;
     }
 
@@ -145,25 +145,66 @@ custom_ui_style = """
         border-radius: 8px;
         padding: 10px;
         font-size: 0.78rem;
-        color: #f8fafc !important;
+        color: #ffffff !important;
     }
 
-    /* Chat Messages Styling */
+    /* Target All Chat Messages & Markdown Output Text directly to White */
     div[data-testid="stChatMessage"] {
         background: #1e293b !important;
         border: 1px solid #334155 !important;
         border-radius: 8px !important;
-        color: #f8fafc !important;
+        color: #ffffff !important;
     }
 
-    /* Native Bottom Chat Input Box Dark Theme */
+    div[data-testid="stChatMessage"] p, 
+    div[data-testid="stChatMessage"] span, 
+    div[data-testid="stChatMessage"] li, 
+    div[data-testid="stChatMessage"] div,
+    div[data-testid="stChatMessage"] h1,
+    div[data-testid="stChatMessage"] h2,
+    div[data-testid="stChatMessage"] h3,
+    div[data-testid="stChatMessage"] h4,
+    div[data-testid="stChatMessage"] strong,
+    div[data-testid="stChatMessage"] em {
+        color: #ffffff !important;
+    }
+
+    /* Markdown Tables inside Output Response */
+    div[data-testid="stChatMessage"] table {
+        width: 100% !important;
+        color: #ffffff !important;
+        background-color: #0f172a !important;
+        border: 1px solid #334155 !important;
+        border-radius: 6px !important;
+    }
+
+    div[data-testid="stChatMessage"] table th {
+        background-color: #1e293b !important;
+        color: #38bdf8 !important;
+        border-bottom: 1px solid #334155 !important;
+        padding: 8px !important;
+    }
+
+    div[data-testid="stChatMessage"] table td {
+        color: #f8fafc !important;
+        border-bottom: 1px solid #1e293b !important;
+        padding: 8px !important;
+    }
+
+    /* Code blocks inside output */
+    div[data-testid="stChatMessage"] code {
+        color: #38bdf8 !important;
+        background-color: #0f172a !important;
+    }
+
+    /* Input Box Dark Theme & White Text */
     div[data-testid="stChatInput"] > div {
         background-color: #1e293b !important;
         border: 1px solid #334155 !important;
         border-radius: 10px !important;
     }
     div[data-testid="stChatInput"] textarea {
-        color: #f8fafc !important;
+        color: #ffffff !important;
     }
     </style>
 """
