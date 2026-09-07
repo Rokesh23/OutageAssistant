@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from rag import retrieve
 from llm import ask_llm
 
@@ -9,16 +10,16 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom UI Styling (Slate Dark Theme + Sticky Bottom Chat Box)
+# Custom UI Styling (Light Blue Theme + Unified Input & Upload Bar)
 custom_ui_style = """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    /* Slate Dark Background */
+    /* Light Blue Background for App Viewport */
     html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"], .stApp {
         font-family: 'Inter', sans-serif;
-        background-color: #0b1329 !important;
-        color: #f1f5f9 !important;
+        background-color: #e0f2fe !important;
+        color: #0f172a;
     }
 
     /* Hide default Streamlit overlays */
@@ -47,7 +48,7 @@ custom_ui_style = """
             radial-gradient(1.5px 1.5px at 300px 50px, #ffffff, rgba(0,0,0,0)),
             radial-gradient(1.5px 1.5px at 900px 85px, #cbd5e1, rgba(0,0,0,0)),
             radial-gradient(1px 1px at 1280px 25px, #cbd5e1, rgba(0,0,0,0)),
-            linear-gradient(135deg, #030712 0%, #0b1329 50%, #1e293b 100%);
+            linear-gradient(135deg, #050a14 0%, #0c1427 45%, #182238 100%);
         color: #ffffff;
         padding: 30px 40px 35px 40px;
         margin-top: -60px;
@@ -81,7 +82,7 @@ custom_ui_style = """
         font-size: 2.3rem;
         font-weight: 800;
         letter-spacing: -0.02em;
-        background: linear-gradient(90deg, #38bdf8 0%, #818cf8 100%);
+        background: linear-gradient(90deg, #60a5fa 0%, #38bdf8 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin-top: 10px;
@@ -89,22 +90,46 @@ custom_ui_style = """
     }
 
     .hero-main-subtitle {
-        color: #94a3b8;
+        color: #cbd5e1;
         font-size: 0.95rem;
         font-weight: 400;
         margin-bottom: 20px;
     }
 
+    /* Style for Input Field */
+    div[data-testid="stTextInput"] input {
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        border: 1px solid #bae6fd !important;
+        border-radius: 8px !important;
+        padding: 10px 14px !important;
+        font-size: 0.9rem !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    /* Style for File Uploader Box */
+    div[data-testid="stFileUploader"] {
+        margin-top: 0px !important;
+    }
+    
+    div[data-testid="stFileUploader"] section {
+        padding: 4px 8px !important;
+        background-color: #ffffff !important;
+        border: 1px dashed #0284c7 !important;
+        border-radius: 8px !important;
+        min-height: 42px !important;
+    }
+
     /* Metric Cards */
     .metric-card {
-        background: #1e293b;
-        border: 1px solid #334155;
+        background: #ffffff;
+        border: 1px solid #bae6fd;
         border-radius: 10px;
         padding: 12px 16px;
         display: flex;
         align-items: center;
         gap: 14px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
     .metric-icon {
         width: 40px;
@@ -118,84 +143,65 @@ custom_ui_style = """
     .metric-value {
         font-size: 1.3rem;
         font-weight: 700;
-        color: #f8fafc;
+        color: #0f172a;
         line-height: 1.1;
     }
     .metric-label {
         font-size: 0.76rem;
-        color: #94a3b8;
+        color: #64748b;
         font-weight: 500;
     }
     .metric-subtext {
         font-size: 0.68rem;
-        color: #34d399;
+        color: #10b981;
     }
 
     /* Quick Action Buttons */
     .stButton>button {
         width: 100%;
-        background-color: #1e293b;
-        color: #f8fafc;
-        border: 1px solid #334155;
+        background-color: #ffffff;
+        color: #0f172a;
+        border: 1px solid #bae6fd;
         border-radius: 8px;
         padding: 10px 14px;
         font-weight: 600;
         font-size: 0.82rem;
         text-align: left;
         transition: all 0.2s ease;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     }
     .stButton>button:hover {
-        background-color: #334155;
+        background-color: #f0f9ff;
         border-color: #38bdf8;
-        color: #38bdf8;
+        color: #0284c7;
     }
 
     .section-title {
         font-size: 0.9rem;
         font-weight: 700;
-        color: #f8fafc;
+        color: #0f172a;
         margin-bottom: 10px;
     }
 
-    /* Style for standard chat messages */
+    /* Chat Container styling */
     div[data-testid="stChatMessage"] {
-        background: #1e293b !important;
-        border: 1px solid #334155 !important;
+        background: #ffffff !important;
+        border: 1px solid #bae6fd !important;
         border-radius: 8px !important;
         padding: 12px !important;
-        color: #f8fafc !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
         font-size: 0.88rem;
         margin-bottom: 12px;
     }
 
-    /* Style and medium sizing for bottom chat input */
-    div[data-testid="stChatInput"] {
-        max-width: 750px !important;
-        margin: 0 auto !important;
-        padding-bottom: 15px !important;
-    }
-
-    div[data-testid="stChatInput"] > div {
-        background-color: #1e293b !important;
-        border: 1px solid #334155 !important;
-        border-radius: 10px !important;
-    }
-
-    div[data-testid="stChatInput"] textarea {
-        color: #f8fafc !important;
-    }
-
     /* Footer */
     .footer {
-        background-color: #030712;
+        background-color: #050a14;
         color: #64748b;
-        padding: 12px 40px;
+        padding: 8px 40px;
         margin-left: -5rem;
         margin-right: -5rem;
         margin-top: 40px;
-        margin-bottom: 60px;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -206,11 +212,9 @@ custom_ui_style = """
 """
 st.markdown(custom_ui_style, unsafe_allow_html=True)
 
-# Session state initialization for chat history and active query
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "preset_prompt" not in st.session_state:
-    st.session_state.preset_prompt = None
+# Session state initialization
+if "search_query" not in st.session_state:
+    st.session_state.search_query = ""
 
 # Header Banner
 st.markdown("""
@@ -223,13 +227,47 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# Combined Input Row: Text Input + Upload Button side by side
+col_input, col_upload = st.columns([0.72, 0.28])
+
+with col_input:
+    user_input = st.text_input(
+        "", 
+        value=st.session_state.search_query,
+        placeholder="🔍 Ask about an incident, error code, RCA, or resolution...",
+        label_visibility="collapsed",
+        key="main_search_input"
+    )
+
+with col_upload:
+    uploaded_file = st.file_uploader(
+        "Upload Attachment",
+        type=["csv", "xlsx"],
+        help="Upload .csv or .xlsx logs to analyze",
+        label_visibility="collapsed"
+    )
+
+# Banner Feedback for Attached File
+parsed_file_data = None
+if uploaded_file is not None:
+    try:
+        if uploaded_file.name.endswith('.csv'):
+            parsed_file_data = pd.read_csv(uploaded_file)
+        else:
+            parsed_file_data = pd.read_excel(uploaded_file)
+        st.info(f"📁 Attached **{uploaded_file.name}** ({len(parsed_file_data)} records loaded)")
+    except Exception as err:
+        st.error(f"Error parsing file: {err}")
+
+st.write("")
+
 # Metrics Overview Cards
 m1, m2, m3, m4 = st.columns(4)
 
 with m1:
     st.markdown("""
     <div class="metric-card">
-        <div class="metric-icon" style="background:#1e3a8a; color:#60a5fa;">📋</div>
+        <div class="metric-icon" style="background:#eff6ff; color:#2563eb;">📋</div>
         <div>
             <div class="metric-label">Incidents Analyzed</div>
             <div class="metric-value">14</div>
@@ -241,7 +279,7 @@ with m1:
 with m2:
     st.markdown("""
     <div class="metric-card">
-        <div class="metric-icon" style="background:#064e3b; color:#34d399;">🧠</div>
+        <div class="metric-icon" style="background:#f0fdf4; color:#16a34a;">🧠</div>
         <div>
             <div class="metric-label">RCA Knowledge</div>
             <div class="metric-value">16</div>
@@ -253,7 +291,7 @@ with m2:
 with m3:
     st.markdown("""
     <div class="metric-card">
-        <div class="metric-icon" style="background:#7c2d12; color:#fb923c;">🧩</div>
+        <div class="metric-icon" style="background:#fff7ed; color:#ea580c;">🧩</div>
         <div>
             <div class="metric-label">Common Error Codes</div>
             <div class="metric-value">81</div>
@@ -265,7 +303,7 @@ with m3:
 with m4:
     st.markdown("""
     <div class="metric-card">
-        <div class="metric-icon" style="background:#581c87; color:#c084fc;">📖</div>
+        <div class="metric-icon" style="background:#faf5ff; color:#9333ea;">📖</div>
         <div>
             <div class="metric-label">Resolution Playbooks</div>
             <div class="metric-value">14</div>
@@ -284,79 +322,69 @@ with col_left:
     b1, b2 = st.columns(2)
     with b1:
         if st.button("🔍 Find Root Cause"):
-            st.session_state.preset_prompt = "What are the primary root causes across all incidents?"
+            st.session_state.search_query = "What are the primary root causes across all incidents?"
             st.rerun()
         if st.button("⏱️ Check Incidents"):
-            st.session_state.preset_prompt = "show me all the incidents"
+            st.session_state.search_query = "show me all the incidents"
             st.rerun()
 
     with b2:
         if st.button("💻 Analyze Error Code"):
-            st.session_state.preset_prompt = "List all incidents with gateway timeout or bad gateway errors"
+            st.session_state.search_query = "List all incidents with gateway timeout or bad gateway errors"
             st.rerun()
         if st.button("🛠️ Recommend Fix"):
-            st.session_state.preset_prompt = "What are the fixes and resolutions applied for EDMS_RL incidents?"
+            st.session_state.search_query = "What are the fixes and resolutions applied for EDMS_RL incidents?"
             st.rerun()
 
 with col_right:
     st.markdown('<div class="section-title">Recent Incident Insights</div>', unsafe_allow_html=True)
     st.markdown("""
-    <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:10px; font-size:0.78rem; color:#f8fafc;">
+    <div style="background:#ffffff; border:1px solid #bae6fd; border-radius:8px; padding:10px; font-size:0.78rem;">
         <table style="width:100%; border-collapse:collapse;">
-            <tr style="border-bottom:1px solid #334155; color:#94a3b8; font-weight:600;">
+            <tr style="border-bottom:1px solid #e0f2fe; color:#64748b; font-weight:600;">
                 <td style="padding:6px;">Incident ID</td>
                 <td style="padding:6px;">Project/System</td>
                 <td style="padding:6px;">Status</td>
                 <td style="padding:6px;">RCA Confidence</td>
             </tr>
-            <tr style="border-bottom:1px solid #0f172a;">
-                <td style="padding:6px; font-weight:600; color:#38bdf8;">INC0178998</td>
+            <tr style="border-bottom:1px solid #f8fafc;">
+                <td style="padding:6px; font-weight:600; color:#2563eb;">INC0178998</td>
                 <td style="padding:6px;">EDMS_RL PROD</td>
-                <td style="padding:6px; color:#34d399; font-weight:600;">● Resolved</td>
+                <td style="padding:6px; color:#16a34a; font-weight:600;">● Resolved</td>
                 <td style="padding:6px; font-weight:600;">98%</td>
             </tr>
-            <tr style="border-bottom:1px solid #0f172a;">
-                <td style="padding:6px; font-weight:600; color:#38bdf8;">INC0176274</td>
+            <tr style="border-bottom:1px solid #f8fafc;">
+                <td style="padding:6px; font-weight:600; color:#2563eb;">INC0176274</td>
                 <td style="padding:6px;">EDMS_RL QA</td>
-                <td style="padding:6px; color:#34d399; font-weight:600;">● Resolved</td>
+                <td style="padding:6px; color:#16a34a; font-weight:600;">● Resolved</td>
                 <td style="padding:6px; font-weight:600;">95%</td>
             </tr>
             <tr>
-                <td style="padding:6px; font-weight:600; color:#38bdf8;">INC0191705</td>
+                <td style="padding:6px; font-weight:600; color:#2563eb;">INC0191705</td>
                 <td style="padding:6px;">ASK2 PROD</td>
-                <td style="padding:6px; color:#34d399; font-weight:600;">● Resolved</td>
+                <td style="padding:6px; color:#16a34a; font-weight:600;">● Resolved</td>
                 <td style="padding:6px; font-weight:600;">92%</td>
             </tr>
         </table>
     </div>
     """, unsafe_allow_html=True)
 
-st.write("")
-
-# Display previous conversation thread
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-
-# Handle preset prompt from action buttons
-user_input = st.chat_input("Ask about an incident, error code, RCA, or resolution...")
-
-if st.session_state.preset_prompt:
-    user_input = st.session_state.preset_prompt
-    st.session_state.preset_prompt = None
-
-# Process User Input
+# Processing Search Query and File Attachment Data
 if user_input:
-    st.chat_message("user").markdown(user_input)
-    st.session_state.messages.append({"role": "user", "content": user_input})
+    st.write("")
+    st.markdown('<div class="section-title">Analysis Result</div>', unsafe_allow_html=True)
+    
+    # Enrich user prompt with uploaded file context if available
+    final_query = user_input
+    if parsed_file_data is not None:
+        file_preview_str = parsed_file_data.head(15).to_string()
+        final_query = f"{user_input}\n\n[Attached File Content Preview]:\n{file_preview_str}"
 
-    with st.chat_message("assistant"):
-        with st.spinner("Analyzing RCA Documents..."):
-            context_str, matched_results, confidence = retrieve(user_input)
-            full_response = ask_llm(user_input, context_str)
+    with st.spinner("Analyzing RCA Documents & Attachment..."):
+        context_str, matched_results, confidence = retrieve(final_query)
+        full_response = ask_llm(final_query, context_str)
+        with st.chat_message("assistant"):
             st.markdown(full_response)
-
-    st.session_state.messages.append({"role": "assistant", "content": full_response})
 
 # Footer
 st.markdown("""
