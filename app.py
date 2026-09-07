@@ -9,204 +9,115 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS matching Starry Header + Light Body UI + Hidden Host Toolbars
+# Dark Theme CSS applied to existing elements without changing layout
 custom_ui_style = """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    html, body, [data-testid="stAppViewContainer"] {
+    /* Dark Background for Page */
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"], .stApp {
         font-family: 'Inter', sans-serif;
-        background-color: #f8fafc !important; /* Clean light background */
-        color: #0f172a;
-        overflow: hidden !important;
+        background-color: #0b1329 !important;
+        color: #f1f5f9 !important;
     }
 
-    /* Hide Streamlit default headers, footers, menus, and chrome elements */
+    /* Hide default Streamlit elements */
     header[data-testid="stHeader"] { visibility: hidden; height: 0%; display: none !important; }
     #MainMenu { visibility: hidden; display: none !important; }
     footer { visibility: hidden; display: none !important; }
     div[data-testid="stToolbar"] { visibility: hidden; display: none !important; }
     section[data-testid="stSidebar"] { display: none !important; }
-    button[data-testid="baseButton-header"] { display: none !important; }
-    div[data-testid="stStatusWidget"] { visibility: hidden; display: none !important; }
 
-    /* Hide Bottom Right Streamlit Cloud Floating Toolbars & Badges */
-    div[data-testid="stAppToolbar"], 
-    .stAppToolbar, 
-    .viewerBadge_container__1QSob,
-    [data-testid="manage-app-button"],
-    button[title="View app source"] {
-        display: none !important;
-        visibility: hidden !important;
-    }
-
-    /* Starry Dark Blue Header Banner */
-    .hero-header-banner {
-        background: 
-            radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
-            radial-gradient(1px 1px at 40px 70px, #ffffff, rgba(0,0,0,0)),
-            radial-gradient(1px 1px at 80px 10px, #ffffff, rgba(0,0,0,0)),
-            radial-gradient(1.5px 1.5px at 150px 80px, #cbd5e1, rgba(0,0,0,0)),
-            radial-gradient(1px 1px at 200px 20px, #ffffff, rgba(0,0,0,0)),
-            radial-gradient(1.5px 1.5px at 300px 50px, #ffffff, rgba(0,0,0,0)),
-            radial-gradient(1px 1px at 420px 90px, #cbd5e1, rgba(0,0,0,0)),
-            radial-gradient(1.5px 1.5px at 550px 30px, #ffffff, rgba(0,0,0,0)),
-            radial-gradient(1px 1px at 650px 70px, #ffffff, rgba(0,0,0,0)),
-            radial-gradient(1px 1px at 780px 15px, #ffffff, rgba(0,0,0,0)),
-            radial-gradient(1.5px 1.5px at 900px 85px, #cbd5e1, rgba(0,0,0,0)),
-            radial-gradient(1px 1px at 1020px 40px, #ffffff, rgba(0,0,0,0)),
-            radial-gradient(1.5px 1.5px at 1150px 65px, #ffffff, rgba(0,0,0,0)),
-            radial-gradient(1px 1px at 1280px 25px, #cbd5e1, rgba(0,0,0,0)),
-            radial-gradient(1.5px 1.5px at 1400px 75px, #ffffff, rgba(0,0,0,0)),
-            linear-gradient(135deg, #050a14 0%, #0c1427 45%, #182238 100%);
-        color: #ffffff;
-        padding: 24px 40px 20px 40px;
-        margin-top: -60px;
-        margin-left: -5rem;
-        margin-right: -5rem;
-        margin-bottom: 16px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        text-align: center;
-        position: relative;
-    }
-
-    .header-top-nav {
-        position: absolute;
-        top: 18px;
-        right: 40px;
-        display: flex;
-        align-items: center;
-    }
-
-    .nav-link {
-        color: #94a3b8 !important;
-        text-decoration: none !important;
-        font-size: 0.85rem;
-        font-weight: 500;
-        transition: color 0.2s ease;
-    }
-    .nav-link:hover, .nav-link.active {
-        color: #ffffff !important;
-    }
-
-    .hero-main-title {
-        font-size: 2.1rem;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        background: linear-gradient(90deg, #60a5fa 0%, #38bdf8 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-top: 10px;
-        margin-bottom: 4px;
-    }
-
-    .hero-main-subtitle {
-        color: #cbd5e1;
-        font-size: 0.92rem;
-        font-weight: 400;
-    }
-
-    /* Metric Cards */
+    /* Dark Metric Cards */
     .metric-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
+        background: #1e293b !important;
+        border: 1px solid #334155 !important;
         border-radius: 10px;
-        padding: 10px 14px;
+        padding: 12px 16px;
         display: flex;
         align-items: center;
-        gap: 12px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-    }
-    .metric-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.1rem;
+        gap: 14px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     }
     .metric-value {
-        font-size: 1.25rem;
+        font-size: 1.3rem;
         font-weight: 700;
-        color: #0f172a;
+        color: #f8fafc !important;
         line-height: 1.1;
     }
     .metric-label {
-        font-size: 0.75rem;
-        color: #64748b;
+        font-size: 0.76rem;
+        color: #94a3b8 !important;
         font-weight: 500;
     }
-    .metric-subtext {
-        font-size: 0.68rem;
-        color: #10b981;
-    }
 
-    /* Action Buttons */
+    /* Dark Action Buttons */
     .stButton>button {
         width: 100%;
-        background-color: #ffffff;
-        color: #0f172a;
-        border: 1px solid #e2e8f0;
+        background-color: #1e293b !important;
+        color: #f8fafc !important;
+        border: 1px solid #334155 !important;
         border-radius: 8px;
-        padding: 8px 12px;
+        padding: 10px 14px;
         font-weight: 600;
         font-size: 0.82rem;
         text-align: left;
         transition: all 0.2s ease;
-        margin-bottom: -10px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     }
     .stButton>button:hover {
-        background-color: #f1f5f9;
-        border-color: #cbd5e1;
-        color: #0284c7;
+        background-color: #334155 !important;
+        border-color: #38bdf8 !important;
+        color: #38bdf8 !important;
     }
 
     .section-title {
-        font-size: 0.88rem;
+        font-size: 0.9rem;
         font-weight: 700;
-        color: #0f172a;
-        margin-bottom: 8px;
+        color: #f8fafc !important;
+        margin-bottom: 10px;
     }
 
-    /* Chat Area Scrollable Box */
-    div[data-testid="stChatMessageContainer"] {
-        max-height: 260px !important;
-        overflow-y: auto !important;
-        padding-right: 5px;
+    /* Dark Incident Table Box */
+    .incident-table-container {
+        background: #1e293b !important;
+        border: 1px solid #334155 !important;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 0.78rem;
+        color: #f8fafc !important;
+    }
+    .incident-table-container table tr {
+        border-bottom: 1px solid #334155 !important;
     }
 
+    /* Dark Chat Message Styling */
     div[data-testid="stChatMessage"] {
-        background: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
+        background: #1e293b !important;
+        border: 1px solid #334155 !important;
         border-radius: 8px !important;
-        padding: 10px !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
-        font-size: 0.88rem;
+        color: #f8fafc !important;
     }
 
-    /* Footer */
-    .footer {
-        background-color: #050a14;
-        color: #64748b;
-        padding: 6px 40px;
-        margin-left: -5rem;
-        margin-right: -5rem;
-        position: fixed;
-        bottom: 0;
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.75rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    /* Dark Input Bar at Bottom */
+    div[data-testid="stChatInput"] > div {
+        background-color: #1e293b !important;
+        border: 1px solid #334155 !important;
+        border-radius: 10px !important;
+    }
+    div[data-testid="stChatInput"] textarea {
+        color: #f8fafc !important;
     }
     </style>
 """
 st.markdown(custom_ui_style, unsafe_allow_html=True)
 
-# Starry Header Banner (Centered Title + Top Right Home Link)
+# Session state initialization
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "preset_prompt" not in st.session_state:
+    st.session_state.preset_prompt = None
+
+# Banner Header
 st.markdown("""
 <div class="hero-header-banner">
     <div class="header-top-nav">
@@ -217,13 +128,13 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Metrics Overview Cards
+# Metric Cards Overview
 m1, m2, m3, m4 = st.columns(4)
 
 with m1:
     st.markdown("""
     <div class="metric-card">
-        <div class="metric-icon" style="background:#eff6ff; color:#2563eb;">📋</div>
+        <div class="metric-icon" style="background:#1e3a8a; color:#60a5fa;">📋</div>
         <div>
             <div class="metric-label">Incidents Analyzed</div>
             <div class="metric-value">14</div>
@@ -235,7 +146,7 @@ with m1:
 with m2:
     st.markdown("""
     <div class="metric-card">
-        <div class="metric-icon" style="background:#f0fdf4; color:#16a34a;">🧠</div>
+        <div class="metric-icon" style="background:#064e3b; color:#34d399;">🧠</div>
         <div>
             <div class="metric-label">RCA Knowledge</div>
             <div class="metric-value">16</div>
@@ -247,7 +158,7 @@ with m2:
 with m3:
     st.markdown("""
     <div class="metric-card">
-        <div class="metric-icon" style="background:#fff7ed; color:#ea580c;">🧩</div>
+        <div class="metric-icon" style="background:#7c2d12; color:#fb923c;">🧩</div>
         <div>
             <div class="metric-label">Common Error Codes</div>
             <div class="metric-value">81</div>
@@ -259,7 +170,7 @@ with m3:
 with m4:
     st.markdown("""
     <div class="metric-card">
-        <div class="metric-icon" style="background:#faf5ff; color:#9333ea;">📖</div>
+        <div class="metric-icon" style="background:#581c87; color:#c084fc;">📖</div>
         <div>
             <div class="metric-label">Resolution Playbooks</div>
             <div class="metric-value">14</div>
@@ -270,92 +181,83 @@ with m4:
 
 st.write("")
 
-# Main Dashboard Grid
+# Action Buttons and Recent Incident Insights
 col_left, col_right = st.columns([1, 1.2])
-
-if "query_trigger" not in st.session_state:
-    st.session_state.query_trigger = None
 
 with col_left:
     st.markdown('<div class="section-title">What can I help you with?</div>', unsafe_allow_html=True)
     b1, b2 = st.columns(2)
     with b1:
         if st.button("🔍 Find Root Cause"):
-            st.session_state.query_trigger = "What are the primary root causes across all incidents?"
+            st.session_state.preset_prompt = "What are the primary root causes across all incidents?"
+            st.rerun()
         if st.button("⏱️ Check Incidents"):
-            st.session_state.query_trigger = "show me all the incidents"
+            st.session_state.preset_prompt = "show me all the incidents"
+            st.rerun()
 
     with b2:
         if st.button("💻 Analyze Error Code"):
-            st.session_state.query_trigger = "List all incidents with gateway timeout or bad gateway errors"
+            st.session_state.preset_prompt = "List all incidents with gateway timeout or bad gateway errors"
+            st.rerun()
         if st.button("🛠️ Recommend Fix"):
-            st.session_state.query_trigger = "What are the fixes and resolutions applied for EDMS_RL incidents?"
+            st.session_state.preset_prompt = "What are the fixes and resolutions applied for EDMS_RL incidents?"
+            st.rerun()
 
 with col_right:
     st.markdown('<div class="section-title">Recent Incident Insights</div>', unsafe_allow_html=True)
     st.markdown("""
-    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:8px; font-size:0.78rem;">
+    <div class="incident-table-container">
         <table style="width:100%; border-collapse:collapse;">
-            <tr style="border-bottom:1px solid #f1f5f9; color:#64748b; font-weight:600;">
-                <td style="padding:4px 6px;">Incident ID</td>
-                <td style="padding:4px 6px;">Project/System</td>
-                <td style="padding:4px 6px;">Status</td>
-                <td style="padding:4px 6px;">RCA Confidence</td>
-            </tr>
-            <tr style="border-bottom:1px solid #f8fafc;">
-                <td style="padding:4px 6px; font-weight:600; color:#2563eb;">INC0178998</td>
-                <td style="padding:4px 6px;">EDMS_RL PROD</td>
-                <td style="padding:4px 6px; color:#16a34a; font-weight:600;">● Resolved</td>
-                <td style="padding:4px 6px; font-weight:600;">98%</td>
-            </tr>
-            <tr style="border-bottom:1px solid #f8fafc;">
-                <td style="padding:4px 6px; font-weight:600; color:#2563eb;">INC0176274</td>
-                <td style="padding:4px 6px;">EDMS_RL QA</td>
-                <td style="padding:4px 6px; color:#16a34a; font-weight:600;">● Resolved</td>
-                <td style="padding:4px 6px; font-weight:600;">95%</td>
+            <tr style="color:#94a3b8; font-weight:600;">
+                <td style="padding:6px;">Incident ID</td>
+                <td style="padding:6px;">Project/System</td>
+                <td style="padding:6px;">Status</td>
+                <td style="padding:6px;">RCA Confidence</td>
             </tr>
             <tr>
-                <td style="padding:4px 6px; font-weight:600; color:#2563eb;">INC0191705</td>
-                <td style="padding:4px 6px;">ASK2 PROD</td>
-                <td style="padding:4px 6px; color:#16a34a; font-weight:600;">● Resolved</td>
-                <td style="padding:4px 6px; font-weight:600;">92%</td>
+                <td style="padding:6px; font-weight:600; color:#38bdf8;">INC0178998</td>
+                <td style="padding:6px;">EDMS_RL PROD</td>
+                <td style="padding:6px; color:#34d399; font-weight:600;">● Resolved</td>
+                <td style="padding:6px; font-weight:600;">98%</td>
+            </tr>
+            <tr>
+                <td style="padding:6px; font-weight:600; color:#38bdf8;">INC0176274</td>
+                <td style="padding:6px;">EDMS_RL QA</td>
+                <td style="padding:6px; color:#34d399; font-weight:600;">● Resolved</td>
+                <td style="padding:6px; font-weight:600;">95%</td>
+            </tr>
+            <tr>
+                <td style="padding:6px; font-weight:600; color:#38bdf8;">INC0191705</td>
+                <td style="padding:6px;">ASK2 PROD</td>
+                <td style="padding:6px; color:#34d399; font-weight:600;">● Resolved</td>
+                <td style="padding:6px; font-weight:600;">92%</td>
             </tr>
         </table>
     </div>
     """, unsafe_allow_html=True)
 
-# Chat Assistant Box
-st.markdown('<div class="section-title" style="margin-top:10px;">💬 Ask Assistant</div>', unsafe_allow_html=True)
+st.write("")
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+# Display messages thread above the chat input
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+# Bottom sticky chat input (matches original screen element placement)
+user_input = st.chat_input("Ask about an incident, error code, RCA, or resolution...")
 
-user_prompt = st.chat_input("Ask about an incident, error code, RCA, or resolution...")
+if st.session_state.preset_prompt:
+    user_input = st.session_state.preset_prompt
+    st.session_state.preset_prompt = None
 
-if st.session_state.query_trigger:
-    user_prompt = st.session_state.query_trigger
-    st.session_state.query_trigger = None
-
-if user_prompt:
-    st.chat_message("user").markdown(user_prompt)
-    st.session_state.messages.append({"role": "user", "content": user_prompt})
+if user_input:
+    st.chat_message("user").markdown(user_input)
+    st.session_state.messages.append({"role": "user", "content": user_input})
 
     with st.chat_message("assistant"):
         with st.spinner("Analyzing RCA Documents..."):
-            context_str, matched_results, confidence = retrieve(user_prompt)
-            full_response = ask_llm(user_prompt, context_str)
+            context_str, matched_results, confidence = retrieve(user_input)
+            full_response = ask_llm(user_input, context_str)
             st.markdown(full_response)
 
     st.session_state.messages.append({"role": "assistant", "content": full_response})
-
-# Footer Section
-st.markdown("""
-<div class="footer">
-    <div>🛡️ Secure • Trusted • Always On</div>
-    <div>© 2026 Outage RCA Assistant | v1.0.0</div>
-</div>
-""", unsafe_allow_html=True)
